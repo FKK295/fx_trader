@@ -1,0 +1,9 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus_FX
+    type: prometheus
+    access: proxy # Server (default) or proxy
+    url: http://prometheus:9090 # Internal Docker network hostname for Prometheus
+    isDefault: true
+    editable: true # Whether the datasource can be edited in Grafana UI

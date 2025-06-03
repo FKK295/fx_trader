@@ -1,0 +1,96 @@
+[tool.poetry]
+name = "fx_trader"
+version = "0.1.0"
+description = "Automated FX Trading System"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "fx_trader"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+
+# Core Libraries (Pinned)
+pandas = "^1.5.3"
+xgboost = "^1.7.5"
+prophet = "^1.1.5" # Consider checking for latest stable & its specific dependencies
+structlog = "^23.1.0"
+tenacity = "^8.2.3"
+pydantic = "^1.10.12" # Sticking to v1 for broader compatibility initially
+httpx = "^0.24.1" # Adjusted for feast compatibility; python-telegram-bot version also adjusted
+diskcache = "^5.6.3"
+great-expectations = "^0.18.15"
+feast = "^0.35.0" # Compatible with Pydantic v1; ensure Python 3.9/3.10 compatibility
+mlflow-skinny = "^2.8.0"
+optuna = "^3.3.0"
+evidently = "^0.4.0" # Or newer
+backtrader = "^1.9.76.123"
+dask = {extras = ["distributed"], version = "^2024.3.0"}
+"TA-Lib" = {path = "whl/ta_lib-0.6.3-cp310-cp310-win_amd64.whl"} # Requires TA-Lib C library to be installed system-wide
+hvac = "^1.2.1"
+oandapyV20 = "^0.7.0" # OANDA v20 client
+MetaTrader5 = {version = "^5.0.45", platform = "win32"} # Windows specific, optional
+redis = "^5.0.1"
+psycopg2-binary = "^2.9.7" # For PostgreSQL_
+fastapi = "^0.99.1" # Adjusted for feast 0.35.0 compatibility (requires <0.100)
+uvicorn = {extras = ["standard"], version = "^0.27.0"}
+celery = {extras = ["redis"], version = "^5.3.6"}
+prometheus-client = "^0.19.0" # No change here, just for context
+python-telegram-bot = "^20.5" # Adjusted for httpx ^0.24.1 compatibility
+
+# Additional useful libraries
+PyYAML = "^6.0.1" # For loading config.dev.yaml
+cachetools = "^5.3.2" # For Vault client caching
+quantstats = "^0.0.61" # For backtesting reports
+websockets = "^12.0" # For OANDA streaming
+numpy = "^1.23.5" # Often a dependency, good to have explicit
+scipy = "^1.10.1"
+scikit-learn = "^1.2.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-cov = "^4.1.0"
+mypy = "^1.7.0"
+flake8 = "^6.1.0"
+black = "^23.11.0"
+isort = "^5.12.0"
+pre-commit = "^3.5.0"
+mutmut = "^2.4.4"
+pytest-asyncio = "^0.21.1" # For testing async code
+safety = "^2.3.5" # For checking dependencies for vulnerabilities
+types-PyYAML = "^6.0.12.11"
+types-redis = "^4.6.0.7"
+types-cachetools = "^5.3.0.5"
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true # Start with true, gradually reduce
+exclude = ['venv', '\.venv', 'docs', 'notebooks']
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --cov-report=term-missing --cov-report=xml --cov=fx_trader"
+testpaths = [
+    "tests"
+]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+markers = [
+    "slow: marks tests as slow to run",
+    "integration: marks integration tests",
+    "unit: marks unit tests",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

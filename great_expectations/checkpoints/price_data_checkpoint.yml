@@ -1,0 +1,24 @@
+name: price_data_checkpoint
+config_version: 1.0
+class_name: SimpleCheckpoint
+run_name_template: "%Y%m%d-%H%M%S-price_data-validation"
+validations:
+  - batch_request:
+      datasource_name: runtime_pandas_datasource # Matches datasource in great_expectations.yml
+      data_connector_name: default_runtime_data_connector_name # Matches connector
+      data_asset_name: price_data_asset # This will be dynamically set or needs to match usage
+      # runtime_parameters: # For passing data at runtime
+      #  batch_data: # dataframe will be supplied here
+      data_connector_query:
+        index: -1
+    expectation_suite_name: price_data_suite
+action_list:
+  - name: store_validation_result
+    action:
+      class_name: StoreValidationResultAction
+  - name: store_evaluation_params
+    action:
+      class_name: StoreEvaluationParametersAction
+  - name: update_data_docs
+    action:
+      class_name: UpdateDataDocsAction

@@ -1,0 +1,50 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+      - id: detect-private-key
+
+  - repo: https://github.com/psf/black
+    rev: 23.11.0 # Choose a version
+    hooks:
+      - id: black
+        language_version: python3.10
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0 # Choose a version
+    hooks:
+      - id: isort
+        name: isort (python)
+        args: ["--profile", "black"]
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0 # Choose a version
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-bugbear, flake8-comprehensions, flake8-print]
+        # E501: line too long (handled by black)
+        # W503: line break before binary operator (black prefers this)
+        args: ['--ignore=E501,W503']
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.0 # Choose a version
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - pydantic
+          - types-PyYAML
+          - types-redis
+          - types-cachetools
+        exclude: ^(docs/|notebooks/|tests/fixtures/)
+
+  - repo: https://github.com/PyCQA/safety
+    rev: 2.3.5 # Choose a version
+    hooks:
+      - id: safety
+        args: ["--ignore=51457"] # Example: Ignore specific vulnerability if vetted

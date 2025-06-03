@@ -1,0 +1,70 @@
+{
+  "__inputs": [],
+  "__requires": [/* ... Grafana version requirements ... */],
+  "annotations": { /* ... */ },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    // --- Overview Row ---
+    {
+      "type": "row", "title": "Trading Performance Overview", /* ... */
+      "panels": [
+        { "type": "stat", "title": "Total PnL (USD)", "targets": [{ "expr": "fx_trader_pnl_total_usd" }] /* ... */ },
+        { "type": "gauge", "title": "Current Drawdown %", "targets": [{ "expr": "fx_trader_current_drawdown_percentage" }] /* ... */ },
+        { "type": "stat", "title": "Total Open Trades", "targets": [{ "expr": "sum(fx_trader_open_trades_count)" }] /* ... */ }
+      ]
+    },
+    // --- Detailed PnL & Trades Row ---
+    {
+      "type": "row", "title": "PnL and Trade Details", /* ... */
+      "panels": [
+        { "type": "timeseries", "title": "PnL Over Time", "targets": [{ "expr": "fx_trader_pnl_total_usd" }] /* ... */ },
+        { "type": "timeseries", "title": "Open Trades per Pair", "targets": [{ "expr": "sum by (pair) (fx_trader_open_trades_count)" }] /* ... */ },
+        { "type": "histogram", "title": "Trade Duration Distribution", "targets": [{ "expr": "sum(rate(fx_trader_trade_duration_seconds_bucket[5m])) by (le, pair)" }] /* ... */ },
+        { "type": "histogram", "title": "Slippage Distribution (BPS)", "targets": [{ "expr": "sum(rate(fx_trader_slippage_basis_points_bucket[5m])) by (le, pair)" }] /* ... */ }
+      ]
+    },
+    // --- System Health & API Row ---
+    {
+      "type": "row", "title": "System Health & API Monitoring", /* ... */
+      "panels": [
+        { "type": "timeseries", "title": "API Call Latency (95th Percentile)", "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(fx_trader_api_call_latency_seconds_bucket[5m])) by (le, api_name, endpoint))" }] /* ... */ },
+        { "type": "timeseries", "title": "API Errors", "targets": [{ "expr": "sum(rate(fx_trader_api_call_errors_total[5m])) by (api_name, endpoint, error_type)" }] /* ... */ },
+        { "type": "timeseries", "title": "Order Events", "targets": [{ "expr": "sum(rate(fx_trader_order_events_total[5m])) by (status)" }] /* ... */ },
+        { "type": "timeseries", "title": "Application Errors", "targets": [{ "expr": "sum(rate(fx_trader_application_errors_total[5m])) by (module)" }] /* ... */ }
+      ]
+    },
+    // --- Model Monitoring Row ---
+    {
+      "type": "row", "title": "Model Performance & Drift", /* ... */
+      "panels": [
+        { "type": "gauge", "title": "Model Drift Score", "targets": [{ "expr": "fx_trader_model_drift_score" }] /* ... */ },
+        { "type": "histogram", "title": "Prediction Confidence", "targets": [{ "expr": "sum(rate(fx_trader_model_prediction_confidence_bucket[5m])) by (le, model_name)" }] /* ... */ }
+        // Add panels for F1 score, AUC, LogLoss over time if logged from retraining/evaluation
+      ]
+    },
+    // --- Data Ingestion Row ---
+    {
+        "type": "row", "title": "Data Ingestion Monitoring", /* ... */
+        "panels": [
+            { "type": "timeseries", "title": "Ingestion Batch Size", "targets": [{"expr": "fx_trader_data_ingestion_batch_size"}] /* ... */},
+            { "type": "timeseries", "title": "Ingestion Latency (Avg)", "targets": [{"expr": "rate(fx_trader_data_ingestion_latency_seconds_sum[5m]) / rate(fx_trader_data_ingestion_latency_seconds_count[5m])"}] /* ... */}
+        ]
+    }
+    // Add more rows and panels as needed (e.g., for Blackbox exporter metrics)
+  ],
+  "refresh": "10s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["fx-trader", "algorithmic-trading"],
+  "templating": { /* ... for variables like $datasource ... */ },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": { /* ... */ },
+  "timezone": "browser",
+  "title": "FX Trading System Dashboard",
+  "uid": "fx-trader-main-dashboard", // Generate a unique UID
+  "version": 1
+}

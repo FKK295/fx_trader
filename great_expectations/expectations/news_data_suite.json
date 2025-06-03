@@ -1,0 +1,26 @@
+{
+  "expectation_suite_name": "news_data_suite",
+  "ge_cloud_id": null,
+  "meta": {
+    "great_expectations_version": "0.18.15"
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_column_to_exist",
+      "kwargs": {
+        "column": "title"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_of_type",
+      "kwargs": {
+        "column": "overall_sentiment_score",
+        "type_": "float"
+      },
+      "meta": {}
+    }
+  ],
+  "data_asset_type": null,
+  "execution_engine": {}
+}

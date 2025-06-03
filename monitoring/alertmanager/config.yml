@@ -1,0 +1,73 @@
+global:
+  resolve_timeout: 5m
+  # The directory from which notification templates are read.
+  # templates:
+  # - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h # How long to wait before re-firing an alert that has already been sent.
+  receiver: 'default-receiver' # Default receiver if no routes match.
+  routes:
+    - receiver: 'telegram-notifications'
+      match_re:
+        severity: 'critical|warning' # Send critical and warning alerts to Telegram
+      continue: true # If true, an alert that already matched a route continues to matching sibling routes.
+
+    # Example: Route for specific high-priority alerts to a different receiver or with different grouping
+    # - receiver: 'on-call-pager'
+    #   match:
+    #     alertname: 'MaxDrawdownBreached'
+    #   continue: false
+
+receivers:
+  - name: 'default-receiver' # A null receiver, or could be email, etc.
+    # email_configs:
+    #   - to: 'alerts@example.com'
+
+  - name: 'telegram-notifications'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}' # Use environment variable substitution
+        chat_id: ${TELEGRAM_CHAT_ID} # Use environment variable substitution
+        api_url: 'https://api.telegram.org' # Default, can be omitted
+        # parse_mode: 'HTML' # or 'MarkdownV2'
+        send_resolved: true # Send notification when alert is resolved
+        # Optional: Custom message template
+        # message: |
+        #   {{ define "telegram.default.message" }}
+        #   [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }}
+        #   {{ range .Alerts }}
+        #   Labels:
+        #   {{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}
+        #   {{ end }}
+        #   Annotations:
+        #   {{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}
+        #   {{ end }}
+        #   Source: <{{ .GeneratorURL }}|Source>
+        #   {{ end }}
+        #   {{ end }}
+
+# Inhibition rules can prevent certain alerts from firing if other alerts are already active.
+# Example: Don't send "LowDiskSpace" if "HostDown" is already firing for the same host.
+# inhibit_rules:
+#   - source_match:
+#       severity: 'critical'
+#     target_match:
+#       severity: 'warning'
+#     # Apply inhibition if the alert labels match for all target labels.
+#     equal: ['alertname', 'cluster', 'service']
+
+# Note on Environment Variables in Alertmanager Config:
+# Alertmanager itself doesn't directly substitute environment variables like ${VAR} in its config file
+# out of the box for all fields in all versions.
+# When running Alertmanager in Docker, you can use `envsubst` on the config file before starting Alertmanager,
+# or mount the token/chat_id from files if Alertmanager supports `_file` suffixes (e.g., `bot_token_file`).
+# The Docker Compose setup for Alertmanager should handle this, e.g., by passing environment variables
+# that are then used by an entrypoint script to process the config template.
+# For `telegram_configs`, recent versions might support `bot_token_file` and `chat_id_file`.
+# If direct env var substitution isn't working, the `envsubst` approach is common:
+# In your Dockerfile or entrypoint for Alertmanager:
+# CMD envsubst < /etc/alertmanager/config.yml.template > /etc/alertmanager/config.yml && /bin/alertmanager ...
+# And your `config.yml` would be `config.yml.template` with ${VARS}.

@@ -1,0 +1,26 @@
+# fx_trader/feature_store/feature_store.yaml
+project: fx_trader_feature_repo
+registry: registry.db # Path relative to this feature_store.yaml file. Will be created by `feast apply`.
+provider: local # Indicates that we are using a local Feast setup
+offline_store:
+  type: file # Using local Parquet files for the offline store
+  # The path below should ideally be a directory where your Parquet source files are stored.
+  # For example, if your FEAST_OFFLINE_STORE_PATH points to 'feature_store/data/offline_store.parquet',
+  # and this parquet file contains all your source data, that's fine.
+  # More commonly, this would be a directory like 'data/' (relative to this yaml)
+  # and individual data_sources.py would point to specific files within it.
+  # For now, let's assume 'data/' is the directory for offline Parquet files.
+  # The actual data source paths will be defined in data_sources.py
+  path: data/ # This means Feast expects Parquet files to be in fx_trader/feature_store/data/
+online_store:
+  type: redis
+  # Connection details for Redis will be loaded from online_store.yaml
+  # The path to online_store.yaml is specified by FEAST_ONLINE_STORE_CONFIG_PATH in settings.
+  # Feast will look for a redis_opts block in that yaml.
+  # For Feast versions that directly support a path to another YAML for online store config:
+  # config_path: online_store.yaml # Path relative to this feature_store.yaml
+  # For older versions, you might need to specify connection details directly or ensure
+  # Feast picks them up from environment variables if FEAST_ONLINE_STORE_CONFIG_PATH is used by custom logic.
+  # Let's assume a newer Feast version or that the Python SDK will handle online_store.yaml path correctly.
+  # If not, redis connection details would be here:
+  # connection_string: "${REDIS_HOST}:${REDIS_PORT},db=${REDIS_DB_FEAST}"

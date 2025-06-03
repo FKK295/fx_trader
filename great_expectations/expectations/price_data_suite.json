@@ -1,0 +1,33 @@
+{
+  "expectation_suite_name": "price_data_suite",
+  "ge_cloud_id": null,
+  "meta": {
+    "great_expectations_version": "0.18.15"
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_table_columns_to_match_ordered_list",
+      "kwargs": {
+        "column_list": ["time", "open", "high", "low", "close", "volume"]
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "close"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_of_type",
+      "kwargs": {
+        "column": "volume",
+        "type_": "int64"
+      },
+      "meta": {}
+    }
+  ],
+  "data_asset_type": null,
+  "execution_engine": {}
+}

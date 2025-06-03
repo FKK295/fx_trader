@@ -1,0 +1,66 @@
+groups:
+- name: FXTraderAlerts
+  rules:
+  - alert: MaxDrawdownBreached
+    expr: fx_trader_current_drawdown_percentage > 0.08 # Example: 8% drawdown, configure via TradingParameters
+    for: 1m # Alert if condition holds for 1 minute
+    labels:
+      severity: critical
+      service: fx_trader_core
+    annotations:
+      summary: "Maximum portfolio drawdown breached (Instance {{ $labels.instance }})"
+      description: "Portfolio drawdown is {{ $value | printf \"%.2f\" }}%, exceeding the threshold. Manual intervention may be required."
+
+  - alert: HighAPIErrorsOANDA
+    expr: sum(rate(fx_trader_api_call_errors_total{api_name="oanda"}[5m])) by (endpoint) > 5
+    for: 2m
+    labels:
+      severity: warning
+      service: oanda_integration
+    annotations:
+      summary: "High rate of OANDA API errors on endpoint {{ $labels.endpoint }}"
+      description: "OANDA API calls to {{ $labels.endpoint }} are failing at a high rate ({{ $value }} errors/min). Check connectivity and API status."
+
+  - alert: RepeatedExecutionFailure
+    expr: increase(fx_trader_order_events_total{status="rejected"}[10m]) > 3
+    for: 1m
+    labels:
+      severity: critical
+      service: fx_trader_execution
+    annotations:
+      summary: "Multiple trade execution rejections for pair {{ $labels.pair }}"
+      description: "More than 3 trade rejections in the last 10 minutes for {{ $labels.pair }}. Value: {{ $value }}."
+
+  - alert: DataIngestionStalled
+    # This requires your ingestion process to update a metric like `fx_trader_last_successful_ingestion_timestamp_seconds`
+    # expr: time() - fx_trader_last_successful_ingestion_timestamp_seconds{data_source="market_data"} > 3600 # Example: No market data for 1 hour
+    # For now, using a placeholder based on batch size if it stops updating
+    expr: changes(fx_trader_data_ingestion_batch_size{data_source="market_data"}[15m]) == 0
+    for: 30m # If no change in batch size metric for 30 mins (implies no new data or stuck)
+    labels:
+      severity: warning
+      service: data_ingestion
+    annotations:
+      summary: "Data ingestion for {{ $labels.data_source }} might be stalled."
+      description: "No new data batches detected for {{ $labels.data_source }} in the last 30 minutes. Last known batch size: {{ $value }}."
+
+  - alert: ModelDriftDetected
+    expr: fx_trader_model_drift_score{drift_type="data"} > 0.15 # Example threshold for data drift
+    for: 5m
+    labels:
+      severity: warning
+      service: ml_model_monitoring
+    annotations:
+      summary: "Significant data drift detected for model {{ $labels.model_name }}."
+      description: "Data drift score for {{ $labels.model_name }} is {{ $value | printf \"%.2f\" }}, exceeding threshold. Model retraining might be needed."
+
+  # Alert for Blackbox Exporter - if an external API is down
+  - alert: ExternalAPIDown
+    expr: probe_success{job="blackbox_oanda_api"} == 0 # Assuming blackbox job name
+    for: 2m
+    labels:
+      severity: critical
+      service: external_dependency
+    annotations:
+      summary: "External API {{ $labels.instance }} is down."
+      description: "Blackbox exporter probe for OANDA API ({{ $labels.instance }}) failed."

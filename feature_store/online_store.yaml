@@ -1,0 +1,9 @@
+# fx_trader/feature_store/online_store.yaml
+# Configuration for the Redis online store.
+# Feast will use these settings when `online_store.type` is `redis`.
+type: redis
+connection_string: "${REDIS_HOST}:${REDIS_PORT},db=${REDIS_DB_FEAST}"
+# You can also specify host, port, db individually if your Feast version prefers that:
+# host: ${REDIS_HOST}
+# port: ${REDIS_PORT}
+# db: ${REDIS_DB_FEAST}

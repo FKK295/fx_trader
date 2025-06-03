@@ -1,0 +1,270 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: fx_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-fx_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-fx_password}
+      POSTGRES_DB: ${DB_NAME:-fx_trader_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-fx_user} -d ${DB_NAME:-fx_trader_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis_app: # For application caching, Celery broker/backend
+    image: redis:7-alpine
+    container_name: fx_redis_app
+    ports:
+      - "${REDIS_PORT:-6379}:6379" # Exposes the port for app connection
+    command: redis-server --save 60 1 --loglevel warning --requirepass ${REDIS_PASSWORD:-} # Optional password
+    volumes:
+      - redis_app_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis_feast: # For Feast online store
+    image: redis:7-alpine
+    container_name: fx_redis_feast
+    ports:
+      - "6380:6379" # Expose on a different host port if main Redis is on 6379
+    command: redis-server --save 60 1 --loglevel warning --dbfilename dump_feast.rdb --port 6379 # Ensure it uses a different DB file if sharing volume
+    # If using a different port internally, ensure online_store.yaml reflects that.
+    # This config assumes Redis for Feast runs on its default port 6379 *inside its container*.
+    # online_store.yaml should point to REDIS_HOST:REDIS_PORT (e.g. redis_feast:6379) with REDIS_DB_FEAST
+    volumes:
+      - redis_feast_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2023-11-20T22-40-07Z
+    container_name: fx_minio
+    ports:
+      - "${MLFLOW_S3_ENDPOINT_URL_PORT:-9000}:9000" # For S3 API
+      - "9001:9001" # For MinIO Console
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minio_access_key}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-minio_secret_key}
+      MINIO_DEFAULT_BUCKETS: "mlflow-artifacts,raw-data,feature-store-offline" # Create buckets on startup
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: fx_vault
+    ports:
+      - "${VAULT_PORT:-8200}:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: "root" # For dev mode only
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    cap_add:
+      - IPC_LOCK
+    command: server -dev # Starts Vault in development mode
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8200/v1/sys/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  mlflow_server:
+    image: ghcr.io/mlflow/mlflow:v2.8.0 # Use a pinned version
+    container_name: fx_mlflow_server
+    ports:
+      - "${MLFLOW_TRACKING_URI_PORT:-5001}:5000" # MLflow server runs on 5000 by default inside container
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-minio_access_key}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-minio_secret_key}
+      MLFLOW_S3_ENDPOINT_URL: "http://minio:${MLFLOW_S3_ENDPOINT_URL_PORT:-9000}" # Internal Docker network hostname
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://${DB_USER:-fx_user}:${DB_PASSWORD:-fx_password}@postgres:${DB_PORT:-5432}/${DB_NAME:-fx_trader_db}
+      --default-artifact-root ${MLFLOW_ARTIFACT_ROOT:-s3://mlflow-artifacts}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
+  app: # Main application service (FastAPI, CLI tools)
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fx_app
+    env_file:
+      - .env # Load environment variables from .env file
+    environment: # Add or override specific variables for the app service
+      PYTHONUNBUFFERED: 1
+      PYTHONIOENCODING: UTF-8
+      # Ensure these point to internal Docker services if needed
+      POSTGRES_DSN: postgresql://${DB_USER:-fx_user}:${DB_PASSWORD:-fx_password}@postgres:${DB_PORT:-5432}/${DB_NAME:-fx_trader_db}
+      REDIS_URL: redis://redis_app:${REDIS_PORT:-6379}/${REDIS_DB_APP:-0}
+      MLFLOW_TRACKING_URI: http://mlflow_server:5000 # Internal MLflow port
+      VAULT_ADDR: http://vault:8200
+      FEAST_ONLINE_STORE_CONFIG__TYPE: redis # Example of overriding Feast config via env for Python SDK
+      FEAST_ONLINE_STORE_CONFIG__CONNECTION_STRING: redis_feast:6379,db=${REDIS_DB_FEAST:-1}
+    ports:
+      - "8000:8000" # For FastAPI app
+    volumes:
+      - .:/app # Mount current directory to /app for live code changes in dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis_app:
+        condition: service_healthy
+      redis_feast:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+      mlflow_server: # Ensure mlflow server is up, though not strictly a health dependency for app start
+        condition: service_started
+    command: ["api"] # Default command for the app service (runs FastAPI)
+    # To run other commands: docker-compose run app train --args...
+    restart: unless-stopped
+
+  # Optional Celery worker
+  # worker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: fx_worker
+  #   env_file: .env
+  #   environment: # Similar to app service
+  #     # ...
+  #   depends_on:
+  #     redis_app:
+  #       condition: service_healthy
+  #     postgres: # If Celery tasks interact with DB
+  #       condition: service_healthy
+  #   command: ["worker"]
+  #   restart: unless-stopped
+
+  # Dask (Optional, for parallel backtesting or feature engineering)
+  # dask_scheduler:
+  #   image: ghcr.io/dask/dask:latest # Or a specific version
+  #   container_name: fx_dask_scheduler
+  #   ports:
+  #     - "8786:8786" # Scheduler port
+  #     - "8787:8787" # Dashboard port
+  #   command: dask-scheduler
+  #   restart: unless-stopped
+
+  # dask_worker:
+  #   image: ghcr.io/dask/dask:latest
+  #   container_name: fx_dask_worker
+  #   depends_on:
+  #     - dask_scheduler
+  #   command: dask-worker tcp://dask_scheduler:8786
+  #   # environment: # Pass necessary env vars if workers need them
+  #   #   PYTHONPATH: /app
+  #   # volumes: # Mount code if workers need to import project modules
+  #   #   - .:/app
+  #   restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    container_name: fx_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules # Alerting rules
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle' # Allows reloading config via HTTP POST to /-/reload
+    depends_on:
+      - app # If app exposes /metrics
+      # - blackbox_exporter # If using blackbox exporter
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: fx_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # GF_INSTALL_PLUGINS: # If you need specific plugins
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana_provisioning/:/etc/grafana/provisioning/ # For datasources, dashboards
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: fx_alertmanager
+    ports:
+      - "9093:9093"
+    environment: # Pass Telegram secrets to Alertmanager container
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+    volumes:
+      # Use a template and envsubst if Alertmanager version doesn't support env var substitution directly
+      - ./monitoring/alertmanager/config.yml:/etc/alertmanager/config.yml # Or config.yml.template
+      - alertmanager_data:/alertmanager
+    # command: > # Example if using envsubst
+    #   sh -c "envsubst < /etc/alertmanager/config.yml.template > /etc/alertmanager/config.yml &&
+    #   /bin/alertmanager --config.file=/etc/alertmanager/config.yml --storage.path=/alertmanager"
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Optional Blackbox Exporter for probing external APIs
+  # blackbox_exporter:
+  #   image: prom/blackbox-exporter:v0.24.0
+  #   container_name: fx_blackbox_exporter
+  #   ports:
+  #     - "9115:9115"
+  #   volumes:
+  #     - ./prometheus/blackbox.yml:/config/blackbox.yml
+  #   command:
+  #     - '--config.file=/config/blackbox.yml'
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_app_data:
+  redis_feast_data:
+  minio_data:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:

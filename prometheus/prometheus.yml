@@ -1,0 +1,45 @@
+global:
+  scrape_interval: 15s # How frequently to scrape targets by default.
+  evaluation_interval: 15s # How frequently to evaluate rules.
+
+scrape_configs:
+  - job_name: 'prometheus' # Scrape Prometheus itself
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'fx_app' # Scrape your main application
+    # Assuming your app service is named 'app' in docker-compose and exposes metrics on port 8000 (or 8001 if separate server)
+    static_configs:
+      - targets: ['app:8000'] # Default FastAPI port if metrics are on /metrics
+    # If metrics are on a different port, e.g., 8001 via start_http_server:
+    # static_configs:
+    #   - targets: ['app:8001']
+
+  - job_name: 'node_exporter' # Example: if you run node_exporter for host metrics
+    static_configs:
+      - targets: ['node_exporter:9100'] # Assuming node_exporter service exists
+    # In a typical Docker setup, you might not run node_exporter directly for the host,
+    # but cAdvisor for container metrics is common.
+
+  - job_name: 'cadvisor' # Example: for container metrics
+    static_configs:
+      - targets: ['cadvisor:8080'] # Assuming cAdvisor service exists
+
+  # Example for Blackbox Exporter if used
+  # - job_name: 'blackbox_oanda_api'
+  #   metrics_path: /probe
+  #   params:
+  #     module: [http_2xx]  # Probe OANDA API using http_2xx module defined in blackbox.yml
+  #   static_configs:
+  #     - targets:
+  #       - https://api-fxpractice.oanda.com/v3/accounts # Example OANDA endpoint to probe
+  #   relabel_configs:
+  #     - source_labels: [__address__]
+  #       target_label: __param_target
+  #     - source_labels: [__param_target]
+  #       target_label: instance
+  #     - target_label: __address__
+  #       replacement: blackbox_exporter:9115  # Blackbox exporter's address and port
+
+rule_files:
+  - "/etc/prometheus/rules/*.yml" # Load all .yml files from the rules directory
