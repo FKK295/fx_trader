@@ -21,17 +21,12 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'poetry'  # pipxを使用する場合に適しています
+        cache: 'poetry'  # Poetryの依存関係をキャッシュ
     
-    - name: Install Poetry via pipx
+    - name: Install Poetry
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pipx
-        pipx install poetry==1.7.1
-        echo "$(python -m pipx environment --value PIPX_BIN_DIR)" >> $GITHUB_PATH
-        # pipxがインストールするバイナリディレクトリをGitHub ActionsのPATHに明示的に追加
-        # これにより、次のステップでpoetryコマンドが確実に利用可能になります。
-        echo "$(python -m pipx environment --value PIPX_BIN_DIR)" >> $GITHUB_PATH
+        pip install poetry==1.7.1
 
     - name: Install TA-Lib (system dependency)
       run: |
