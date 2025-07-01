@@ -30,10 +30,49 @@ jobs:
         # Poetryのバージョンを確認
         python -m poetry --version
 
-    - name: Install TA-Lib (system dependency)
+    - name: Install system dependencies for TA-Lib
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libta-lib-dev
+        # 必要なツールをインストール
+        sudo apt-get update -y
+        sudo apt-get install -y --no-install-recommends \
+            software-properties-common \
+            build-essential \
+            wget
+
+        # リポジトリを追加
+        sudo add-apt-repository -y universe
+        sudo add-apt-repository -y ppa:deadsnakes/ppa
+        sudo apt-get update -y
+
+        # TA-Libの依存関係をインストール
+        sudo apt-get install -y \
+            libta-lib0 \
+            libta-lib-dev \
+            ta-lib1 \
+            ta-lib1-dev
+
+        # ソースからビルドする場合のフォールバック
+        if ! command -v ta-lib-config &> /dev/null; then
+            echo "TA-Lib not found in repositories, building from source..."
+            wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+            tar -xzf ta-lib-0.4.0-src.tar.gz
+            cd ta-lib/
+            ./configure --prefix=/usr
+            make
+            sudo make install
+            cd ..
+            rm -rf ta-lib/ ta-lib-0.4.0-src.tar.gz
+        fi
+
+        # インストールの確認
+        if ! command -v ta-lib-config &> /dev/null; then
+            echo "Error: Failed to install TA-Lib"
+            exit 1
+        fi
+        
+        # クリーンアップ
+        sudo apt-get clean
+        sudo rm -rf /var/lib/apt/lists/*
 
     - name: Configure Poetry
       run: |
