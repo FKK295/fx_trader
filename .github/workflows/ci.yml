@@ -80,8 +80,20 @@ jobs:
         
         echo "Mutation testing complete. Check HTML report in artifacts."
 
+    - name: Check for Codecov token
+      id: check_codecov_token
+      run: |
+        if [ -n "${{ secrets.CODECOV_TOKEN }}" ]; then
+          echo "codecov_token_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "codecov_token_exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Upload coverage to Codecov
-      if: ${{ secrets.CODECOV_TOKEN != '' }}
+      # Codecovにカバレッジレポートをアップロードします。
+      # CODECOV_TOKENが設定されている場合にのみ実行します。
+      # プライベートリポジトリの場合は必須です。
+      if: steps.check_codecov_token.outputs.codecov_token_exists == 'true'
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
