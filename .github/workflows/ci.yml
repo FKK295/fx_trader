@@ -97,7 +97,7 @@ jobs:
 
     - name: Upload Mutmut HTML report
       if: always() # Always run this step to upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: mutmut-html-report-${{ matrix.python-version }}
         path: html/mutmut/ # Path where mutmut stores the HTML report

@@ -1,0 +1,82 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:  # 手動実行を許可
+  push:
+    tags:
+      - 'v*'  # v1.0.0 のようなタグがプッシュされたときに実行
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.7.1
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+    
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: |
+        poetry install --no-dev --sync --no-interaction --no-ansi
+    
+    - name: Run database migrations
+      env:
+        DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      run: |
+        poetry run alembic upgrade head
+    
+    - name: Deploy to production
+      env:
+        DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+        DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      run: |
+        # 本番環境へのデプロイスクリプトを実行
+        # 例: Docker Swarm, Kubernetes, またはクラウドプロバイダーへのデプロイ
+        echo "Deploying version ${{ github.ref_name }} to production..."
+        
+        # デプロイコマンドの例（実際の環境に合わせて調整）
+        # docker stack deploy -c docker-compose.prod.yml fx_trader
+        
+        # または、Terraformを使用する場合
+        # cd terraform/prod
+        # terraform init
+        # terraform apply -auto-approve
+        
+        echo "Deployment completed successfully!"
+    
+    - name: Verify deployment
+      run: |
+        # デプロイの検証（例: ヘルスチェックエンドポイントへのリクエスト）
+        echo "Verifying deployment..."
+        # curl -sSf http://your-production-url/health > /dev/null || exit 1
+        echo "Deployment verified successfully!"
+    
+    - name: Send deployment notification
+      if: always()
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_COLOR: ${{ job.status == 'success' && '#36a64f' || '#ff0000' }}
+        SLACK_TITLE: 'Deployment ${{ job.status }}'
+        SLACK_MESSAGE: 'Deployment of ${{ github.repository }}@${{ github.sha }} to production ${{ job.status }}'
+        SLACK_USERNAME: GitHub Actions
+        MSG_MINIMAL: true

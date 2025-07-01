@@ -1,66 +1,269 @@
-E:\USERS\KOTA\DESKTOP\FX_TRADER\FX_TRADER
-|   config.py
-|   __init__.py
+E:\USERS\KOTA\DESKTOP\FX_TRADER
+|   .env
+|   .env.example
+|   .gitignore
+|   .pre-commit-config.yaml
+|   alembic.ini
+|   docker-compose.yml
+|   docker-entrypoint.sh
+|   Dockerfile
+|   fx-trader-policy.hcl
+|   LICENSE
+|   nn b.txt
+|   pyproject.toml
+|   README.md
+|   redis-entrypoint.sh
+|   tree.txt
 |   
-+---app
-|   |   main.py
++---.github
+|   \---workflows
+|           ci.yml
+|           retrain.yml
+|           
++---.mypy_cache
+|               
++---backtest
+|   |   runner.py
 |   |   __init__.py
 |   |   
+|   \---strategies
+|           bollinger_bands_strategy.py
+|           ema_crossover_strategy.py
+|           rsi_strategy.py
+|           __init__.py
+|           
++---cache
+|       .gitkeep
+|       
++---config
+|   |   config.dev.yaml
+|   |   settings.py
+|   |   trading_params.py
+|   |   __init__.py
+|   |   
+|   \---__pycache__
+|           settings.cpython-310.pyc
+|           trading_params.cpython-310.pyc
+|           __init__.cpython-310.pyc
+|           
++---data_ingest
+|       fred_client.py
+|       news_client.py
+|       oanda_client.py
+|       __init__.py
+|       
++---docs
+|   |   api.md
+|   |   configuration.md
+|   |   
 |   +---api
+|   |       rest_api.md
+|   |       
+|   +---operations
+|   |       monitoring.md
+|   |       
+|   +---setup
+|   |       development.md
+|   |       production.md
+|   |       
+|   +---specification
+|   |       specification.md
+|   |       
+|   \---testing
+|           strategy.md
+|           
++---execution
+|       abstract_broker_client.py
+|       mt5_broker_client.py
+|       oanda_broker_client.py
+|       risk_manager.py
+|       __init__.py
+|       
++---feature_store
+|   |   data_sources.py
+|   |   entities.py
+|   |   feature_store.yaml
+|   |   online_store.yaml
+|   |   registry.db
+|   |   __init__.py
+|   |   
+|   +---data
+|   |       .gitkeep
+|   |       
+|   \---feature_views
+|       |   macro_features.py
+|       |   news_features.py
+|       |   price_features.py
+|       |   __init__.py
+|       |   
+|       \---__pycache__
+|               macro_features.cpython-310.pyc
+|               __init__.cpython-310.pyc
+|               
++---fx_trader
+|   |   config.py
+|   |   __init__.py
+|   |   
+|   +---app
+|   |   |   main.py
 |   |   |   __init__.py
 |   |   |   
-|   |   +---v1
-|   |   |   |   api.py
+|   |   +---api
 |   |   |   |   __init__.py
 |   |   |   |   
-|   |   |   +---endpoints
-|   |   |   |   |   accounts.py
-|   |   |   |   |   backtesting.py
-|   |   |   |   |   health.py
-|   |   |   |   |   market_data.py
-|   |   |   |   |   orders.py
-|   |   |   |   |   positions.py
-|   |   |   |   |   trading.py
+|   |   |   +---v1
+|   |   |   |   |   api.py
 |   |   |   |   |   __init__.py
 |   |   |   |   |   
+|   |   |   |   +---endpoints
+|   |   |   |   |   |   accounts.py
+|   |   |   |   |   |   backtesting.py
+|   |   |   |   |   |   health.py
+|   |   |   |   |   |   market_data.py
+|   |   |   |   |   |   orders.py
+|   |   |   |   |   |   positions.py
+|   |   |   |   |   |   trading.py
+|   |   |   |   |   |   __init__.py
+|   |   |   |   |   |   
+|   |   |   |   |   \---__pycache__
+|   |   |   |   |           accounts.cpython-310.pyc
+|   |   |   |   |           backtesting.cpython-310.pyc
+|   |   |   |   |           health.cpython-310.pyc
+|   |   |   |   |           market_data.cpython-310.pyc
+|   |   |   |   |           orders.cpython-310.pyc
+|   |   |   |   |           positions.cpython-310.pyc
+|   |   |   |   |           trading.cpython-310.pyc
+|   |   |   |   |           __init__.cpython-310.pyc
+|   |   |   |   |           
 |   |   |   |   \---__pycache__
-|   |   |   |           accounts.cpython-310.pyc
-|   |   |   |           backtesting.cpython-310.pyc
-|   |   |   |           health.cpython-310.pyc
-|   |   |   |           market_data.cpython-310.pyc
-|   |   |   |           orders.cpython-310.pyc
-|   |   |   |           positions.cpython-310.pyc
-|   |   |   |           trading.cpython-310.pyc
 |   |   |   |           __init__.cpython-310.pyc
 |   |   |   |           
 |   |   |   \---__pycache__
 |   |   |           __init__.cpython-310.pyc
 |   |   |           
 |   |   \---__pycache__
+|   |           main.cpython-310.pyc
+|   |           __init__.cpython-310.pyc
+|   |           
+|   +---db
+|   |   |   base.py
+|   |   |   __init__.py
+|   |   |   
+|   |   +---migrations
+|   |   |   |   env.py
+|   |   |   |   script.py.mako
+|   |   |   |   __init__.py
+|   |   |   |   
+|   |   |   +---versions
+|   |   |   |   |   246a1bafa3c5_initial_migration.py
+|   |   |   |   |   7f2f6a4320d0_initial_migration.py
+|   |   |   |   |   
+|   |   |   |   \---__pycache__
+|   |   |   |           246a1bafa3c5_initial_migration.cpython-310.pyc
+|   |   |   |           7f2f6a4320d0_initial_migration.cpython-310.pyc
+|   |   |   |           
+|   |   |   \---__pycache__
+|   |   |           env.cpython-310.pyc
+|   |   |           
+|   |   \---__pycache__
+|   |           base.cpython-310.pyc
 |   |           __init__.cpython-310.pyc
 |   |           
 |   \---__pycache__
-|           main.cpython-310.pyc
+|           config.cpython-310.pyc
 |           __init__.cpython-310.pyc
 |           
-+---db
-|   |   base.py
++---great_expectations
+|   |   great_expectations.yml
 |   |   __init__.py
 |   |   
-|   +---migrations
-|   |   |   env.py
-|   |   |   script.py.mako
-|   |   |   __init__.py
-|   |   |   
-|   |   +---versions
-|   |   \---__pycache__
-|   |           env.cpython-310.pyc
-|   |           
+|   +---checkpoints
+|   |       .gitkeep
+|   |       price_data_checkpoint.yml
+|   |       
+|   \---expectations
+|           .gitkeep
+|           macro_data_suite.json
+|           news_data_suite.json
+|           price_data_suite.json
+|           
++---mlops
+|       retrain.py
+|       train.py
+|       vault_client.py
+|       __init__.py
+|       
++---models
+|       forecast.py
+|       signals.py
+|       __init__.py
+|       
++---monitoring
+|   |   exporters.py
+|   |   metrics.py
+|   |   prometheus.yml
+|   |   __init__.py
+|   |   
+|   +---alertmanager
+|   |       .gitkeep
+|   |       alerts.yml
+|   |       config.yml
+|   |       
+|   +---alert_rules
+|   |       fx_trader_alerts.yml
+|   |       
+|   +---grafana_dashboards
+|   |       fx_trader_dashboard.json
+|   |       
+|   \---grafana_provisioning
+|       +---dashboards
+|       |       dashboards.yml
+|       |       fx_trader_dashboard.json
+|       |       grafana_dashboard.json
+|       |       
+|       \---datasources
+|               prometheus_ds.yml
+|               
++---orchestrator
+|       airflow_dag.py
+|       prefect_flow.py
+|       __init__.py
+|       
++---prometheus
+|   |   prometheus.yml
+|   |   
+|   \---rules
+|           trading_alerts.yml
+|           
++---quality_checks
+|       validate.py
+|       __init__.py
+|       
++---tests
+|   |   conftest.py
+|   |   __init__.py
+|   |   
+|   +---integration
+|   |       __init__.py
+|   |       
+|   \---unit
+|           test_backtest.py
+|           test_config.py
+|           test_data_ingest.py
+|           test_execution.py
+|           test_utils.py
+|           __init__.py
+|           
++---utils
+|   |   http_client.py
+|   |   logging.py
+|   |   __init__.py
+|   |   
 |   \---__pycache__
-|           base.cpython-310.pyc
+|           logging.cpython-310.pyc
 |           __init__.cpython-310.pyc
 |           
-\---__pycache__
-        config.cpython-310.pyc
-        __init__.cpython-310.pyc
+\---whl
+        TA_Lib-0.4.32-cp310-cp310-win_amd64.whl
+        ta_lib-0.6.3-cp310-cp310-win_amd64.whl
         
