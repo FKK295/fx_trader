@@ -10,6 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.9", "3.10"]
 
@@ -22,15 +23,24 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'poetry'
     
-    - name: Install Poetry
-      run: pipx install poetry==1.7.1
-      
+    - name: Install Poetry and pipx
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pipx
+        pipx install poetry==1.7.1
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Install TA-Lib (system dependency)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libta-lib-dev
+
     - name: Configure Poetry
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
         
-    - name: Set up cache
+    - name: Set up Poetry cache
       uses: actions/cache@v3
       id: cache
       with:
@@ -45,23 +55,9 @@ jobs:
     - name: Install dependencies
       run: poetry install --with dev,test --sync --no-interaction --no-ansi
 
-    - name: Install TA-Lib (system dependency)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libta-lib-dev
-        # Re-run poetry install if TA-Lib Python wrapper needs to be built against system lib
-        # This might be redundant if TA-Lib was already installed correctly by poetry
-        # poetry install --with dev,test --sync --no-interaction --no-ansi
-
     - name: Run linters and formatters (pre-commit)
       run: |
         poetry run pre-commit run --all-files
-        # Alternatively, run tools individually:
-        # poetry run black --check .
-        # poetry run isort --check-only .
-        # poetry run flake8 .
-        # poetry run mypy .
-        # poetry run safety check -r requirements.txt # Generate requirements.txt if needed or use poetry export
 
     - name: Run Pytest with coverage
       run: |
@@ -71,17 +67,12 @@ jobs:
 
     - name: Run Mutation Testing (Mutmut)
       run: |
-        # Run mutation tests
         poetry run mutmut run
-        # Generate HTML report
         poetry run mutmut html
         
-        # Extract mutation score and check against threshold
-        # Note: This is a basic implementation and might need adjustment
         MSR=$(poetry run mutmut results | grep -oP '\d+%' | head -1 | tr -d '%')
         echo "Mutation Score: ${MSR}%"
         
-        # Fail if mutation score is below threshold (e.g., 80%)
         if [ "$MSR" -lt 80 ]; then
           echo "Mutation Score (${MSR}%) is below 80%. Failing build."
           exit 1
@@ -90,15 +81,25 @@ jobs:
         echo "Mutation testing complete. Check HTML report in artifacts."
 
     - name: Upload coverage to Codecov
+      if: ${{ secrets.CODECOV_TOKEN != '' }}
       uses: codecov/codecov-action@v3
       with:
-        token: ${{ secrets.CODECOV_TOKEN }} # Optional: if your repo is private
+        token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage.xml
         fail_ci_if_error: true
+        verbose: true
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
@@ -111,26 +112,13 @@ jobs:
           ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
-
-    - name: Log in to GitHub Container Registry
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Push Docker image to GHCR
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      run: |
-        docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
-        # Optionally, tag as latest
-        docker tag ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }} ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
-        docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
 
     - name: Upload Mutmut HTML report
-      if: always() # Always run this step to upload artifacts
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: mutmut-html-report-${{ matrix.python-version }}
-        path: html/mutmut/ # Path where mutmut stores the HTML report
+        path: html/mutmut/
+        retention-days: 7
