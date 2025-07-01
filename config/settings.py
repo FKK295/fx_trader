@@ -4,23 +4,31 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Type
 
 import yaml
+from pydantic_settings import BaseSettings
 from pydantic import (
-    BaseSettings,
     Field,
     PostgresDsn,
     RedisDsn,
     validator,
+    field_validator,
+    model_validator,
 )
 
-from fx_trader.config.trading_params import TradingParameters
+# 後方互換性のためのエイリアス
+validator = field_validator
+
+from config.trading_params import TradingParameters
 
 logger = logging.getLogger(__name__)
 
 
-def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
+def yaml_config_settings_source() -> Dict[str, Any]:
     """
     A Pydantic settings source that loads variables from a YAML file.
     Allows for a `config.dev.yaml` for local overrides.
+    
+    Note: This function is designed to be used with Pydantic v2's settings_customise_sources,
+    which expects a callable that takes no arguments.
     """
     config_file_path_str = os.getenv(
         "CONFIG_FILE_PATH", "config/config.dev.yaml")
@@ -44,6 +52,22 @@ def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
 
 
 class Settings(BaseSettings):
+    # --- Application Metadata ---
+    VERSION: str = Field("0.1.0", env="APP_VERSION")
+    APP_ENV: str = Field("development", env="APP_ENV")
+    DEBUG: bool = False  # Will be set by model_validator based on APP_ENV
+    
+    # --- API Settings ---
+    API_V1_STR: str = Field("/api/v1", env="API_V1_STR")
+    DOCS_ENABLED: bool = Field(True, env="DOCS_ENABLED")
+    
+    # --- CORS Settings ---
+    BACKEND_CORS_ORIGINS: list[str] = Field(
+        default=["*"],  # 本番環境では適切なオリジンに制限してください
+        env="BACKEND_CORS_ORIGINS",
+        description="List of origins that are allowed to make cross-origin requests"
+    )
+
     # --- API Keys & Access Credentials ---
     OANDA_ACCOUNT_ID: str = Field(..., env="OANDA_ACCOUNT_ID")
     OANDA_ACCESS_TOKEN: str = Field(..., env="OANDA_ACCESS_TOKEN")
@@ -76,13 +100,15 @@ class Settings(BaseSettings):
     DB_NAME: str = Field(default="fx_trader_db", env="DB_NAME")
     POSTGRES_DSN: Optional[PostgresDsn] = None  # Assembled below
 
-    @validator("POSTGRES_DSN", pre=True, always=True)
-    def assemble_postgres_dsn(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+    @field_validator("POSTGRES_DSN", mode='before')
+    @classmethod
+    def assemble_postgres_dsn(cls, v: Optional[str], info: Any) -> Any:
         if isinstance(v, str):
             return v
+        values = info.data
         return PostgresDsn.build(
-            scheme="postgresql",
-            user=values.get("DB_USER"),
+            scheme="postgresql+psycopg2",
+            username=values.get("DB_USER"),
             password=values.get("DB_PASSWORD"),
             host=values.get("DB_HOST"),
             port=str(values.get("DB_PORT")),
@@ -113,15 +139,17 @@ class Settings(BaseSettings):
     REDIS_DB_FEAST: int = Field(default=1, env="REDIS_DB_FEAST")
     REDIS_URL: Optional[RedisDsn] = None  # Assembled below for app Redis
 
-    @validator("REDIS_URL", pre=True, always=True)
-    def assemble_redis_url(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+    @field_validator("REDIS_URL", mode='before')
+    @classmethod
+    def assemble_redis_url(cls, v: Optional[str], info: Any) -> Any:
         if isinstance(v, str):
             return v
+        values = info.data
         return RedisDsn.build(
             scheme="redis",
             host=values.get("REDIS_HOST"),
             port=str(values.get("REDIS_PORT")),
-            path=f"/{values.get('REDIS_DB_APP') or 0}",
+            path=f"/{values.get('REDIS_DB_APP')}",
         )
 
     # --- Notification Service (Telegram) ---
@@ -141,25 +169,36 @@ class Settings(BaseSettings):
     APP_ENV: str = Field(default="development", env="APP_ENV")
 
     class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        # env_nested_delimiter = '__' # If you want to set TRADING__MAX_POSITIONS_PER_CURRENCY
-        # Optional: prefix for all env vars, e.g. FX_TRADER_OANDA_ACCOUNT_ID
-        env_prefix = "FX_TRADER_"
+        model_config = {
+            "env_file": ".env",
+            "env_file_encoding": "utf-8",
+            "case_sensitive": True,
+            "extra": "ignore",
+        }
 
-        @classmethod
-        def customise_sources(
-            cls,
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        # 環境変数 > YAML設定 > デフォルト値 の優先順位で読み込む
+        return (
             init_settings,
+            yaml_config_settings_source,
             env_settings,
             file_secret_settings,
-        ):
-            return (
-                init_settings,
-                env_settings,
-                yaml_config_settings_source,  # Load from YAML first
-                file_secret_settings,
-            )
+        )
+
+
+    @model_validator(mode='after')
+    def set_debug_from_env(self) -> 'Settings':
+        # Set DEBUG based on APP_ENV
+        self.DEBUG = self.APP_ENV.lower() in ["development", "dev", "local"]
+        return self
 
 
 settings = Settings()

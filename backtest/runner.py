@@ -7,12 +7,12 @@ import pandas as pd
 import quantstats as qs
 from backtrader.feeds import PandasData
 
-from fx_trader.config import settings
-from fx_trader.config.trading_params import TradingParameters
+from config import settings
+from config.trading_params import TradingParameters
 # For fetching live-like data
-from fx_trader.data_ingest.oanda_client import OandaClient
-from fx_trader.backtest.strategies import STRATEGY_MAPPING
-from fx_trader.utils.logging import configure_logging, get_logger
+from data_ingest.oanda_client import OandaClient
+from backtest.strategies import STRATEGY_MAPPING
+from utils.logging import configure_logging, get_logger
 
 # Dask for parallelization (optional, more complex setup)
 # import dask

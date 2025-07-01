@@ -1,0 +1,50 @@
+groups:
+  - name: fx_trader_alerts
+    rules:
+      # ポジション関連のアラート
+      - alert: HighPositionExposure
+        expr: fx_trader_positions_size > 100000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High position exposure detected"
+          description: "Position size for {{ $labels.currency_pair }} is above threshold"
+
+      - alert: NegativePNL
+        expr: fx_trader_positions_pnl < -1000
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Negative PnL detected"
+          description: "PnL for {{ $labels.currency_pair }} is below threshold"
+
+      # 取引関連のアラート
+      - alert: HighTradeFailureRate
+        expr: rate(fx_trader_trades_failed_total[5m]) / rate(fx_trader_trades_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High trade failure rate"
+          description: "Trade failure rate is above threshold"
+
+      # データ関連のアラート
+      - alert: HighDataLatency
+        expr: histogram_quantile(0.95, rate(fx_trader_data_latency_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High data latency"
+          description: "Data latency is above 5 seconds"
+
+      - alert: DataErrors
+        expr: rate(fx_trader_data_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Data errors detected"
+          description: "Data errors are occurring for {{ $labels.source }}"

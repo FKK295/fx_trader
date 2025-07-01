@@ -2,16 +2,14 @@
 project: fx_trader_feature_repo
 registry: registry.db # Path relative to this feature_store.yaml file. Will be created by `feast apply`.
 provider: local # Indicates that we are using a local Feast setup
+entity_key_serialization_version: 2 # Required for proper Long type serialization
+
+repo_path: .
+
 offline_store:
   type: file # Using local Parquet files for the offline store
-  # The path below should ideally be a directory where your Parquet source files are stored.
-  # For example, if your FEAST_OFFLINE_STORE_PATH points to 'feature_store/data/offline_store.parquet',
-  # and this parquet file contains all your source data, that's fine.
-  # More commonly, this would be a directory like 'data/' (relative to this yaml)
-  # and individual data_sources.py would point to specific files within it.
-  # For now, let's assume 'data/' is the directory for offline Parquet files.
-  # The actual data source paths will be defined in data_sources.py
-  path: data/ # This means Feast expects Parquet files to be in fx_trader/feature_store/data/
+  # The offline store will use the default path or the one specified in FEAST_OFFLINE_STORE_PATH
+  # Individual data sources will define their own paths in data_sources.py
 online_store:
   type: redis
   # Connection details for Redis will be loaded from online_store.yaml

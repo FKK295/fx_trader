@@ -12,10 +12,10 @@ from feast import FeatureStore
 from sklearn.metrics import accuracy_score, f1_score, log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split, TimeSeriesSplit
 
-from fx_trader.config import settings
-from fx_trader.config.trading_params import TradingParameters
-from fx_trader.models.forecast import PriceForecaster  # Optional
-from fx_trader.utils.logging import configure_logging, get_logger
+from config import settings
+from config.trading_params import TradingParameters
+from models.forecast import PriceForecaster  # Optional
+from utils.logging import configure_logging, get_logger
 
 configure_logging()
 logger = get_logger(__name__)

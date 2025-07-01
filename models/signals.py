@@ -6,8 +6,8 @@ import pandas as pd
 import talib
 from pydantic import BaseModel, Field, validator
 
-from fx_trader.config import settings
-from fx_trader.utils.logging import get_logger
+from config import settings
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 

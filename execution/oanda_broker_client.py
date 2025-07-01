@@ -7,15 +7,15 @@ from oandapyV20.contrib.requests import MarketOrderRequest, StopLossOrderRequest
 from oandapyV20.endpoints import accounts, orders, positions, trades
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from fx_trader.config import settings
-from fx_trader.execution.abstract_broker_client import (
+from config import settings
+from execution.abstract_broker_client import (
     AbstractBrokerClient,
     OrderType,
     Position,
     TradeOrder,
     OrderStatus
 )
-from fx_trader.utils.logging import get_logger
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -329,7 +329,7 @@ class OandaBrokerClient(AbstractBrokerClient):
     ) -> pd.DataFrame:
         # This is a synchronous wrapper for consistency with abstract method.
         # The main data ingestion should use data_ingest.oanda_client for async calls.
-        from fx_trader.data_ingest.oanda_client import OandaClient as IngestOandaClient
+        from data_ingest.oanda_client import OandaClient as IngestOandaClient
         ingest_client = IngestOandaClient(
             self.access_token, self.account_id, self.environment)
 

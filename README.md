@@ -1,370 +1,705 @@
-# FX Automated Trading System
+# FX 自動売買システム
 
-[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10-blue.svg)](https://www.python.org/)
-[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![CI Status](https://github.com/FKK295/fx_trader/actions/workflows/ci.yml/badge.svg)](https://github.com/FKK295/fx_trader/actions/workflows/ci.yml)
+
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/badge.svg?branch=main)](https://coveralls.io/github/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME?branch=main)
-<!-- Add Codecov badge if you prefer: [![codecov](https://codecov.io/gh/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/branch/main/graph/badge.svg?token=YOUR_CODECOV_TOKEN)](https://codecov.io/gh/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME) -->
-[![Mutation Score](https://img.shields.io/badge/mutation%20score-を目指す%2080%2B-orange)](https://mutmut.readthedocs.io/)
-<!-- You might need a custom way to display mutmut score badge, or integrate with a service that supports it -->
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 
-A production-grade, event-driven, automated FX trading system built with Python. This framework provides a robust foundation for developing, backtesting, and deploying algorithmic trading strategies.
+本プロジェクトは、Pythonで構築されたアルゴリズム取引システムの開発、バックテスト、本番運用を支援するための包括的なプラットフォームです。FastAPIによるAPI、コンテナ技術、MLOpsツール、監視基盤などを統合し、再現性と拡張性の高い取引環境の構築を目指します。
 
-## Features
+## 目次
 
-*   **Modular Design**: Clearly separated components for data ingestion, feature engineering, model training, signal generation, execution, and risk management.
-*   **Configuration Management**: Pydantic `BaseSettings` for environment-based configuration with local overrides.
-*   **Secret Management**: Integration with HashiCorp Vault for secure handling of API keys and credentials.
-*   **Data Ingestion**: Clients for OANDA (REST & streaming), FRED (economic data), and news APIs.
-*   **Data Quality**: Great Expectations for data validation and integrity checks.
-*   **Feature Store**: Feast for managing and serving features for training and live trading.
-*   **MLOps**: MLflow for experiment tracking, model management, and Optuna for hyperparameter optimization. Evidently AI for drift detection.
-*   **Backtesting**: `backtrader` engine with Dask for parallelization, cost simulation, and performance reporting (QuantStats).
-*   **Signal Generation**: Flexible signal generation module supporting various strategies.
-*   **Execution Engine**: Abstract broker interface with OANDA and MT5 (optional) implementations.
-*   **Risk Management**: Comprehensive risk checks (position sizing, drawdown, correlation).
-*   **Workflow Orchestration**: Example DAGs/Flows for Airflow and Prefect.
-*   **Monitoring & Alerting**: Prometheus metrics, Grafana dashboards, and Alertmanager for critical alerts via Telegram.
-*   **CI/CD**: GitHub Actions for automated linting, testing, Docker builds, and optional retraining workflows.
-*   **Containerization**: Dockerized services orchestrated with Docker Compose for local development.
-*   **Best Practices**: Type hints, structured logging (`structlog`), retries (`tenacity`), comprehensive testing (`pytest`, `mutmut`).
+- [主な特徴](#主な特徴)
+- [技術スタック](#技術スタック)
+- [クイックスタート](#クイックスタート)
+- [開発ガイド](#開発ガイド)
+- [API ドキュメント](#api-ドキュメント)
+- [デプロイガイド](#デプロイガイド)
+- [ディレクトリ構成](#ディレクトリ構成)
+- [貢献方法](#貢献方法)
+- [ライセンス](#ライセンス)
 
-## Architecture Overview
+## 主な特徴
+
+- **モジュラー設計**: データ収集、特徴量エンジニアリング、モデル学習、注文実行、リスク管理を明確に分離
+- **MLOps統合**: MLflowによる実験管理、Optunaによるハイパーパラメータ最適化、Evidently AIによるドリフト検出
+- **堅牢なバックテスト**: backtraderエンジンとDaskによる並列処理、QuantStatsによる詳細なパフォーマンス分析
+- **包括的な監視**: Prometheus、Grafana、Alertmanagerを活用したリアルタイム監視
+- **コンテナ化**: DockerとDocker Composeによる一貫した開発・本番環境
+- **セキュアな構成**: HashiCorp Vaultによるシークレット管理、RBAC対応
+
+## 技術スタック
+
+### コア技術
+- **言語**: Python 3.10+
+- **APIフレームワーク**: FastAPI, Uvicorn
+- **データベース**: PostgreSQL 14+, Redis 6+
+- **コンテナ化**: Docker, Docker Compose, Kubernetes
+
+### データ処理 & 機械学習
+- **データ操作**: Pandas, NumPy, Dask
+- **特徴量管理**: Feast
+- **データ品質**: Great Expectations
+- **MLOps**: MLflow, Optuna, Evidently AI
+- **機械学習**: Scikit-learn, XGBoost
+
+### バックテスト & 取引
+- **バックテストエンジン**: backtrader
+- **パフォーマンス分析**: QuantStats
+- **ブローカー統合**: OANDA, MT5 (MetaTrader 5)
+
+### 監視 & 運用
+- **メトリクス**: Prometheus
+- **可視化**: Grafana
+- **アラート**: Alertmanager, Telegram Bot API
+- **ロギング**: structlog, ELK Stack (オプション)
+
+### 開発ツール
+- **依存関係管理**: Poetry
+- **コード品質**: Black, isort, Flake8, Mypy
+- **テスト**: pytest, mutmut, pytest-cov
+- **CI/CD**: GitHub Actions
+- **ドキュメント**: Sphinx, MkDocs
+
+### オーケストレーション (オプション)
+- **ワークフロー管理**: Airflow, Prefect
+- **スケジューリング**: Celery, RQ
+
+## 環境構築ガイド
+
+### 前提条件
+
+- **Docker**: 20.10 以上
+- **Docker Compose**: 2.0 以上
+- **Git**: 最新バージョン推奨
+
+### 1. リポジトリのクローン
+
+```bash
+git clone https://github.com/FKK295/fx_trader.git
+cd fx_trader
+```
+
+### 2. 環境変数の設定
+
+```bash
+# 環境変数テンプレートをコピー
+cp .env.example .env
+
+# .env ファイルを編集（必要に応じて）
+# 主な設定項目：
+# - POSTGRES_*: データベース接続情報
+# - REDIS_*: Redis接続情報
+# - OANDA_*: OANDA API認証情報
+# - MLFLOW_TRACKING_URI: MLflowトラッキングサーバーURI
+```
+
+### 3. コンテナのビルドと起動
+
+サービスは依存関係に基づいて段階的に起動します。一部のサービスは完全に起動するまでに時間を要するため、段階的な起動を推奨します。
+
+#### オプション1: 推奨 - 段階的起動
+
+```bash
+# 1. 基盤サービスのみを起動
+docker-compose up -d postgres redis minio vault mlflow_server
+
+# 2. 監視サービスの起動
+docker-compose up -d prometheus grafana alertmanager
+
+# 3. アプリケーションの起動
+docker-compose up -d --build app
+
+# アプリケーションのログを確認（Ctrl+Cで終了）
+docker-compose logs -f app
+```
+
+#### オプション2: シンプルな起動（開発用）
+
+```bash
+# すべてのサービスを一度に起動
+docker-compose up -d --build
+```
+
+> **トラブルシューティング**: アプリケーションが依存サービスに接続できない場合は、以下のコマンドで各サービスの状態を確認してください。
+> 
+> ```bash
+> # 全サービスの状態確認
+> docker-compose ps
+> 
+> # データベース接続確認
+> docker-compose exec postgres pg_isready
+> 
+> # Redis接続確認
+> docker-compose exec redis_app redis-cli ping
+> 
+> # Vaultの状態確認
+> docker-compose exec vault vault status
+> 
+> # コンテナの再ビルド（必要に応じて）
+> docker-compose build --no-cache
+> ```
+
+### 4. 初期設定
+
+<details>
+<summary>Vault の設定（開発モード）
+
+```bash
+# Vault コンテナ内で実行（自動的に初期化・アンシール済み）
+docker-compose exec vault vault status
+
+# 開発用ルートトークンでログイン
+docker-compose exec vault vault login root-token
+
+# シークレットの設定例（.env.example に基づく）
+docker-compose exec vault vault kv put secret/application/docker \
+  OANDA_ACCOUNT_ID=YOUR_OANDA_ACCOUNT_ID_HERE \
+  OANDA_ACCESS_TOKEN=YOUR_OANDA_ACCESS_TOKEN_HERE \
+  OANDA_ENVIRONMENT=practice \
+  FRED_API_KEY=YOUR_FRED_API_KEY_HERE \
+  ALPHAVANTAGE_API_KEY=YOUR_ALPHAVANTAGE_API_KEY_HERE \
+  DB_USER=fx_user \
+  DB_PASSWORD=fx_password \
+  AWS_ACCESS_KEY_ID=minioadmin \
+  AWS_SECRET_ACCESS_KEY=minioadmin \
+  TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE \
+  TELEGRAM_CHAT_ID=YOUR_TELEGRAM_CHAT_ID_HERE
+```
+</details>
+
+<details>
+<summary>MinIO バケットの作成
+
+1. ブラウザで [MinIO コンソール](http://localhost:9001) にアクセス
+2. ログイン（デフォルト: minioadmin / minioadmin）
+3. 左メニューから「Buckets」を選択し、「Create Bucket」をクリック
+4. 以下のバケットを作成：
+   - mlflow-artifacts
+   - models
+   - datasets
+   - features
+   - artifacts
+5. 各バケットのアクセスポリシーを「public」に設定
+
+または、コマンドラインで作成する場合：
+
+```bash
+docker-compose exec minio sh -c '
+  mc alias set local http://localhost:9000 minioadmin minioadmin && \
+  for bucket in mlflow-artifacts models datasets features artifacts; do \
+    mc mb local/$bucket && \
+    mc policy set download local/$bucket && \
+    mc policy set upload local/$bucket && \
+    mc policy set list local/$bucket && \
+    mc policy set delete local/$bucket; \
+  done'
+```
+</details>
+
+### 5. データベースの初期化
+
+```bash
+# マイグレーション用のディレクトリを作成（初回のみ）
+mkdir -p fx_trader/db/migrations/versions
+
+# マイグレーションの初期化（初回のみ）
+docker-compose exec app alembic revision --autogenerate -m "Initial migration"
+
+# マイグレーションの適用
+docker-compose exec app alembic upgrade head
+```
+
+### 6. アプリケーションの動作確認
+
+#### API ドキュメント
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **OpenAPI JSON**: http://localhost:8000/openapi.json
+
+#### 管理ツール
+- **MLflow UI**: http://localhost:5001
+- **MinIO コンソール**: http://localhost:9001
+- **Grafana ダッシュボード**: http://localhost:3000
+- **Prometheus**: http://localhost:9090
+- **Alertmanager**: http://localhost:9093
+
+## 開発ツール
+
+### コマンド実行方法
+
+すべてのコマンドはコンテナ内で実行することを推奨します：
+
+```bash
+# コンテナ内で対話的にコマンドを実行
+docker-compose exec app bash
+
+# または、直接コマンドを実行
+docker-compose exec app <command>
+```
+
+### よく使うコマンド
+
+<details>
+<summary>コードフォーマット</summary>
+
+```bash
+docker-compose exec app black .
+docker-compose exec app isort .
+docker-compose exec app flake8 .
+```
+</details>
+
+<details>
+<summary>テストの実行</summary>
+
+```bash
+# すべてのテストを実行
+docker-compose exec app pytest
+
+# カバレッジレポート付きで実行
+docker-compose exec app pytest --cov=fx_trader tests/
+
+# 特定のテストを実行
+docker-compose exec app pytest tests/unit/test_models.py -v
+```
+</details>
+
+<details>
+<summary>データベースマイグレーション</summary>
+
+```bash
+# マイグレーションファイルの自動作成
+docker-compose exec app alembic revision --autogenerate -m "説明文"
+
+# マイグレーションの適用
+docker-compose exec app alembic upgrade head
+```
+</details>
+
+## トラブルシューティング
+
+<details>
+<summary>コンテナが起動しない場合</summary>
+
+1. ログを確認：
+   ```bash
+   docker-compose logs <service_name>
+   ```
+
+2. 依存関係の問題を確認：
+   ```bash
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
+</details>
+
+<details>
+<summary>データベース接続エラー</summary>
+
+1. データベースが起動しているか確認：
+   ```bash
+   docker-compose ps | grep postgres
+   ```
+
+2. 接続情報を確認：
+   ```bash
+   docker-compose exec app env | grep POSTGRES_
+   ```
+</details>
+
+<details>
+<summary>Vault の設定がリセットされた</summary>
+
+開発モードでは、コンテナを再起動するとVaultのデータはリセットされます。
+永続化する場合は、`docker-compose.yml` のVault設定を本番モードに変更してください。
+</details>
+
+### 7. 動作確認
+
+```bash
+# ヘルスチェック
+curl http://localhost:8000/health
+
+# バージョン確認
+curl http://localhost:8000/version
+```
+
+## API ドキュメント
+
+### 基本情報
+
+- **ベースURL**: `http://localhost:8000/api/v1`
+- **認証**: JWTベアートークン
+- **レスポンス形式**: JSON
+- **レート制限**: 認証済み 60リクエスト/分、未認証 10リクエスト/分
+
+### 認証
+
+#### トークン取得
+```http
+POST /api/v1/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=your_username&password=your_password
+```
+
+#### リクエストヘッダー
+```
+Authorization: Bearer {access_token}
+Content-Type: application/json
+```
+
+### 主要エンドポイント
+
+#### 1. アカウント管理
+| エンドポイント | メソッド | 説明 | 認証 |
+|--------------|---------|------|------|
+| `/accounts` | GET | アカウント一覧 | 必須 |
+| `/accounts` | POST | 新規アカウント作成 | 必須 |
+| `/accounts/{id}` | GET | アカウント詳細 | 必須 |
+| `/accounts/{id}/balance` | GET | 残高確認 | 必須 |
+
+#### 2. トレード管理
+| エンドポイント | メソッド | 説明 | 認証 |
+|--------------|---------|------|------|
+| `/trades` | GET | トレード一覧 | 必須 |
+| `/trades` | POST | 新規トレード実行 | 必須 |
+| `/trades/{id}` | GET | トレード詳細 | 必須 |
+| `/trades/summary` | GET | トレードサマリー | 必須 |
+
+#### 3. マーケットデータ
+| エンドポイント | メソッド | 説明 | パラメータ |
+|--------------|---------|------|-----------|
+| `/market/rates/{pair}` | GET | 為替レート | `pair`: 通貨ペア (例: USD_JPY) |
+| `/market/ohlc/{pair}` | GET | OHLCデータ | `interval`: 間隔 (1m, 5m, 15m, 1h, 1d) |
+| `/market/orderbook/{pair}` | GET | 板情報 | `depth`: 取得深さ (デフォルト: 10) |
+
+#### 4. 戦略管理
+| エンドポイント | メソッド | 説明 | 認証 |
+|--------------|---------|------|------|
+| `/strategies` | GET | 戦略一覧 | 必須 |
+| `/strategies` | POST | 新規戦略作成 | 必須 |
+| `/strategies/{id}` | GET | 戦略詳細 | 必須 |
+| `/strategies/{id}/backtest` | POST | バックテスト実行 | 必須 |
+
+### レスポンス形式
+
+#### 成功レスポンス
+```json
+{
+  "success": true,
+  "data": {
+    // レスポンスデータ
+  },
+  "message": "Operation completed",
+  "timestamp": "2025-06-28T01:23:45.678901"
+}
+```
+
+#### エラーレスポンス
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Error description",
+    "details": {
+      // 追加のエラー詳細
+    }
+  },
+  "message": "Operation failed",
+  "timestamp": "2025-06-28T01:23:45.678901"
+}
+```
+
+### エラーコード
+
+| コード | 説明 | HTTP ステータス |
+|-------|------|----------------|
+| 1001 | 認証エラー | 401 |
+| 1002 | 権限エラー | 403 |
+| 1003 | リソースが見つかりません | 404 |
+| 2001 | バリデーションエラー | 400 |
+| 2002 | レート制限超過 | 429 |
+| 3001 | 内部サーバーエラー | 500 |
+
+### インタラクティブドキュメント
+
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+- **OpenAPI JSON**: `http://localhost:8000/openapi.json`
+
+## ディレクトリ構成
+
+```
+fx_trader/
+├── .github/               # GitHub Actions ワークフロー
+├── .vscode/               # VSCode 設定
+├── config/                # 設定ファイル
+├── data/                  # データファイル
+│   ├── models/            # 学習済みモデル
+│   └── datasets/          # データセット
+├── docker/                # Docker関連ファイル
+├── docs/                  # ドキュメント
+├── feature_store/         # 特徴量ストア設定 (Feast)
+│   ├── data_sources.py    # データソース定義
+│   ├── entities.py        # エンティティ定義
+│   └── feature_views/     # 特徴量ビュー定義
+├── fx_trader/             # メインアプリケーション
+│   ├── __init__.py
+│   ├── main.py            # エントリーポイント (FastAPIアプリケーション)
+│   ├── api/               # APIルーター
+│   ├── core/              # コア機能
+│   ├── db/                # データベース設定
+│   ├── models/            # SQLAlchemyモデル
+│   ├── schemas/           # Pydanticスキーマ
+│   └── services/          # ビジネスロジック
+├── notebooks/             # Jupyterノートブック
+├── scripts/               # ユーティリティスクリプト
+├── tests/                 # テスト
+├── .env.example          # 環境変数テンプレート
+├── .gitignore
+├── docker-compose.yml     # Docker Compose設定
+├── Dockerfile            # アプリケーションDockerfile
+├── poetry.lock           # 依存関係ロックファイル
+└── pyproject.toml        # プロジェクト設定
+```
+
+## 貢献方法
+
+### 開発フロー
+
+1. **Issueの作成**
+   - 機能追加やバグ修正の前にIssueを作成
+   - 既存のIssueを確認し、重複を避ける
+   - テンプレートに従って必要な情報を記入
+
+2. **ブランチ戦略**
+   - `main`: 安定版リリースブランチ（保護済み）
+   - `develop`: 開発ブランチ（保護済み）
+   - `feature/*`: 新機能開発用（例: `feature/add-user-auth`）
+   - `bugfix/*`: バグ修正用（例: `bugfix/fix-login-issue`）
+   - `hotfix/*`: 緊急修正用（例: `hotfix/security-patch`）
+   - `docs/*`: ドキュメント更新用
+
+3. **プルリクエスト**
+   - 1つのPRは1つの機能/修正に絞る
+   - タイトルは変更内容を簡潔に記述
+   - 説明欄には以下の項目を含める：
+     - 変更内容の詳細
+     - 変更の背景・目的
+     - テスト方法
+     - スクリーンショット（UI変更の場合）
+     - 関連するIssue番号（`Closes #123` など）
+   - コードレビューを依頼する前に、CIがパスすることを確認
+
+### コーディング規約
+
+- **コードスタイル**: Black と isort で自動フォーマット
+  ```bash
+  # コードのフォーマット
+  black .
+  isort .
+  ```
+
+- **型ヒント**: すべての関数・メソッドに型ヒントを付与
+  ```python
+  def get_user(user_id: int) -> User:
+      """ユーザーを取得します。
+      
+      Args:
+          user_id: ユーザーID
+          
+      Returns:
+          User: ユーザーオブジェクト
+          
+      Raises:
+          UserNotFoundError: ユーザーが存在しない場合
+      """
+  ```
+
+- **ドキュメント**: 公開APIにはGoogleスタイルのdocstringを記述
+- **テスト**: 新機能・修正には必ずテストを追加（カバレッジ80%以上を目標）
+
+### コミットメッセージ
+
+[Conventional Commits](https://www.conventionalcommits.org/) に従ってください：
+
+```
+<タイプ>[オプションのスコープ]: <説明>
+
+[オプションの本文]
+
+[オプションのフッター]
+```
+
+**タイプ**: 
+- `feat`: 新機能
+- `fix`: バグ修正
+- `docs`: ドキュメントの変更
+- `style`: コードの意味に影響しない変更（フォーマットなど）
+- `refactor`: リファクタリング
+- `perf`: パフォーマンス改善
+- `test`: テストの追加・修正
+- `chore`: ビルドプロセスやツールの変更
+
+**例**:
+```
+feat(api): ユーザー認証APIを追加
+
+- JWT認証を実装
+- ログイン/ログアウトエンドポイントを追加
+- ユーザー認証ミドルウェアを実装
+
+Closes #123
+```
+
+### テスト
+
+```bash
+# すべてのテストを実行
+pytest
+
+# カバレッジレポート付きで実行
+pytest --cov=fx_trader --cov-report=html
+
+# 特定のテストを実行
+pytest tests/unit/test_models.py -v
+
+# 統合テストを実行
+pytest tests/integration/ -v
+
+# カバレッジレポートを表示
+python -m http.server 8000 -d htmlcov/
+```
+
+### コードレビュー
+
+- コードレビューは丁寧に行い、建設的なフィードバックを提供
+- 指摘には必ず理由を添える
+- 承認は最低2名のメンバーから得る
+- セルフレビューを徹底する
+
+### ドキュメントの更新
+
+コード変更に伴い、以下のドキュメントも更新してください：
+- APIドキュメント（docstring）
+- README.md
+- 関連するWikiページ
+
+## ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。
+
+## 免責事項
+
+このプロジェクトは、投資勧誘や金融商品の取引を推奨するものではありません。このソフトウェアを使用して生じたいかなる損害についても、開発者およびコントリビューターは一切の責任を負いません。
+
+実際の取引を行う前に、必ず十分なテストを行い、リスクを十分に理解した上で自己責任でご利用ください。
+
+## システムアーキテクチャ
 
 ```mermaid
 graph TD
-    subgraph User Interaction
-        CLI_User[CLI / User]
+    A[ユーザー] -->|HTTP/WebSocket| B[APIサーバー (FastAPI)]
+    B -->|gRPC/HTTP| C[MLモデルサーバー (BentoML)]
+    B --> C
+    C --> D[特徴量ストア (Feast)]
+    D --> E[データソース]
+    E -->|バッチ/ストリーム| F[データパイプライン (Airflow/Prefect)]
+    F --> G[データレイク (MinIO)]
+    G --> H[データ処理 (Spark/Dask)]
+    H --> I[特徴量エンジニアリング]
+    I --> D
+    B --> J[メッセージブローカー (NATS/JetStream)]
+    J --> K[ストラテジーワーカー (Python)]
+    K --> L[取引実行 (OANDA v20)]
+    K --> M[バックテストエンジン (Backtrader)]
+    M --> N[パフォーマンス分析 (Pyfolio)]
+    N --> O[可視化 (Grafana)]
+    O --> P[ダッシュボード]
+    P --> Q[アラート (AlertManager)]
+    Q --> R[通知 (Slack/Email)]
+    S[設定管理 (Vault)] --> B
+    S --> K
+    T[監視 (Prometheus)] --> B
+    T --> K
+    U[ログ管理 (Loki)] --> B
+    U --> K
+    V[トレーシング (Jaeger)] --> B
+    V --> K
+
+    subgraph 特徴量エンジニアリング
+        Feast_FS[特徴量ストア (Feast)]
+        特徴量定義[feature_store/feature_definitions.py]
     end
 
-    subgraph Orchestration
-        Orchestrator[Airflow / Prefect]
-    end
-
-    subgraph Data Ingestion
-        OANDA_API[OANDA API]
-        FRED_API[FRED API]
-        News_API[News API]
-        OANDA_Client[data_ingest/oanda_client.py]
-        FRED_Client[data_ingest/fred_client.py]
-        News_Client[data_ingest/news_client.py]
-    end
-
-    subgraph Data Storage & Processing
-        MinIO[MinIO (Artifacts, Offline Store)]
-        PostgreSQL[PostgreSQL (MLflow, Feast Registry)]
-        Redis[Redis (Feast Online Store, Celery)]
-    end
-
-    subgraph Data Quality
-        GreatExpectations[quality_checks/validate.py + GE Suites]
-    end
-
-    subgraph Feature Engineering
-        Feast_FS[Feature Store (Feast)]
-        FeatureDefs[feature_store/feature_definitions.py]
-    end
-
-    subgraph Model Lifecycle (MLOps)
-        MLflow_Server[MLflow Tracking Server]
+    subgraph モデルライフサイクル (MLOps)
+        MLflow_サーバー[MLflow トラッキングサーバー]
         Vault[HashiCorp Vault]
-        Train[mlops/train.py w/ Optuna]
-        Retrain[mlops/retrain.py w/ Evidently]
-        ForecastModel[models/forecast.py]
+        トレーニング[mlops/train.py w/ Optuna]
+        再トレーニング[mlops/retrain.py w/ Evidently]
+        予測モデル[models/forecast.py]
     end
 
-    subgraph Trading Logic
-        SignalGen[models/signals.py]
-        Backtester[backtest/runner.py w/ Backtrader & Dask]
-        RiskManager[execution/risk_manager.py]
-        BrokerClient[execution/*_broker_client.py]
+    subgraph 取引ロジック
+        シグナル生成[models/signals.py]
+        バックテスター[backtest/runner.py w/ Backtrader & Dask]
+        リスク管理[execution/risk_manager.py]
+        ブローカークライアント[execution/*_broker_client.py]
     end
 
-    subgraph Live Execution
-        BrokerAPI[Broker API (OANDA/MT5)]
-        APIServer[API Server (FastAPI - Optional)]
-        CeleryWorker[Celery Worker (Optional)]
+    subgraph ライブ取引
+        ブローカーAPI[ブローカーAPI (OANDA/MT5)]
+        APIサーバー[APIサーバー (FastAPI - オプション)]
+        Celeryワーカー[Celeryワーカー (オプション)]
     end
 
-    subgraph Monitoring & Alerting
+    subgraph 監視とアラート
         Prometheus[Prometheus]
         Grafana[Grafana]
         Alertmanager[Alertmanager]
-        Telegram[Telegram Notifications]
+        Telegram[Telegram通知]
     end
 
-    CLI_User --> Orchestrator
-    Orchestrator -- Triggers --> OANDA_Client
-    Orchestrator -- Triggers --> FRED_Client
-    Orchestrator -- Triggers --> News_Client
-    OANDA_Client -- Ingests Data --> MinIO
-    FRED_Client -- Ingests Data --> MinIO
-    News_Client -- Ingests Data --> MinIO
-    OANDA_Client -- Streams Data --> SignalGen
-    MinIO -- Raw Data --> GreatExpectations
-    GreatExpectations -- Validated Data --> Feast_FS
-    FeatureDefs -- Defines Features --> Feast_FS
-    Feast_FS -- Serves Features --> Train
-    Feast_FS -- Serves Features --> SignalGen
-    Feast_FS -- Stores Features --> Redis
-    Feast_FS -- Stores Features --> MinIO
-    Train -- Logs to --> MLflow_Server
-    Train -- Uses Models from --> ForecastModel
-    Retrain -- Uses Models from --> ForecastModel
-    Retrain -- Detects Drift, Triggers --> Train
-    Retrain -- Logs to --> MLflow_Server
-    MLflow_Server -- Stores Artifacts --> MinIO
-    MLflow_Server -- Uses DB --> PostgreSQL
-    Vault -- Provides Secrets --> OANDA_Client
-    Vault -- Provides Secrets --> FRED_Client
-    Vault -- Provides Secrets --> News_Client
-    Vault -- Provides Secrets --> BrokerClient
-    SignalGen -- Generates Signals --> RiskManager
-    RiskManager -- Checks Risk, Approves Order --> BrokerClient
-    BrokerClient -- Executes Trades --> BrokerAPI
-    Backtester -- Uses --> SignalGen
-    Backtester -- Uses --> RiskManager
-    Backtester -- Simulates --> BrokerAPI
-    Backtester -- Logs Results --> MinIO
-    APIServer -- Exposes Endpoints --> Orchestrator
-    CeleryWorker -- Executes Tasks --> BrokerClient
-    BrokerClient -- Emits Metrics --> Prometheus
-    APIServer -- Emits Metrics --> Prometheus
-    Prometheus -- Scrapes Metrics --> Grafana
-    Prometheus -- Sends Alerts --> Alertmanager
-    Alertmanager -- Notifies --> Telegram
+    CLI_ユーザー --> オーケストレーター
+    オーケストレーター -- トリガー --> OANDA_クライアント
+    オーケストレーター -- トリガー --> FRED_クライアント
+    オーケストレーター -- トリガー --> ニュース_クライアント
+    OANDA_クライアント -- データ取得 --> MinIO
+    FRED_クライアント -- データ取得 --> MinIO
+    ニュース_クライアント -- データ取得 --> MinIO
+    MinIO --> GreatExpectations
+    GreatExpectations --> FeatureDefs
+    FeatureDefs --> Feast_FS
+    Feast_FS --> SignalGen
+    SignalGen --> RiskManager
+    RiskManager --> BrokerClient
+    BrokerClient --> BrokerAPI
+    RiskManager --> Backtester
+    Backtester --> SignalGen
+    SignalGen --> MLflow_Server
+    MLflow_Server --> Train
+    トレーニング --> 再トレーニング
+    再トレーニング --> 予測モデル
+    予測モデル --> シグナル生成
+    シグナル生成 --> APIサーバー
+    APIサーバー --> Celeryワーカー
+    Celeryワーカー --> ブローカークライアント
+    ブローカークライアント --> Prometheus
+    Prometheus --> Grafana
+    Prometheus --> Alertmanager
+    Alertmanager --> Telegram
 ```
 
-## Tech Stack
+## 免責事項
 
-*   **Python**: 3.9 / 3.10
-*   **Dependency Management**: Poetry
-*   **Configuration**: Pydantic
-*   **Data Handling**: Pandas, NumPy
-*   **API Interaction**: HTTPX, Tenacity, OandapyV20, websockets
-*   **Caching**: DiskCache, Cachetools
-*   **Data Quality**: Great Expectations
-*   **Feature Store**: Feast
-*   **ML Experimentation**: MLflow, Optuna
-*   **Drift Detection**: Evidently AI
-*   **Forecasting (Optional)**: Prophet, XGBoost, Scikit-learn
-*   **Backtesting**: Backtrader, Dask, QuantStats
-*   **Databases**: PostgreSQL, Redis
-*   **Secret Management**: HashiCorp Vault (via HVAC)
-*   **Orchestration**: Airflow / Prefect (stubs provided)
-*   **API Framework (Optional)**: FastAPI, Uvicorn
-*   **Task Queue (Optional)**: Celery
-*   **Monitoring**: Prometheus, Grafana, Alertmanager
-*   **Notifications**: Telegram
-*   **Containerization**: Docker, Docker Compose
-*   **CI/CD**: GitHub Actions
-*   **Linting/Formatting**: Black, isort, Flake8, Mypy, Safety
-*   **Testing**: Pytest, Pytest-Cov, Mutmut
+外国為替証拠金取引には高いリスクが伴い、すべての投資家に適しているとは限りません。レバレッジの高さは、あなたに有利にも不利にも働く可能性があります。外国為替取引を始める前に、投資目的、経験レベル、リスク許容度を慎重に検討する必要があります。初期投資の一部または全部を失う可能性があり、失う余裕のない資金を投資すべきではありません。外国為替取引に関連するすべてのリスクを認識し、疑問がある場合は独立した金融アドバイザーに相談する必要があります。このソフトウェアは教育・研究目的のみを意図しており、金融アドバイスを構成するものではありません。
 
-## Prerequisites
+## ライセンス
 
-*   Python 3.9 or 3.10
-*   Poetry (version 1.2+ recommended)
-*   Docker & Docker Compose (latest stable versions)
-*   Git
-*   **TA-Lib C Library**: This must be installed on your system before installing Python dependencies.
-    *   On macOS: `brew install ta-lib`
-    *   On Ubuntu/Debian: `sudo apt-get install libta-lib-dev`
-    *   For other systems, refer to TA-Lib documentation.
-*   **(Optional) MetaTrader 5 Terminal**: If using the `mt5_broker_client.py`, the MetaTrader 5 terminal must be installed and running on a Windows machine or a Windows VM accessible by the Python script.
-
-## Setup Instructions (Local Development)
-
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git fx_trader
-    cd fx_trader
-    ```
-
-2.  **Configure Environment Variables**:
-    Copy the example environment file and customize it with your actual secrets and configurations:
-    ```bash
-    cp .env.example .env
-    ```
-    **IMPORTANT**: Edit `.env` and fill in all `YOUR_*_HERE` placeholders and other relevant settings.
-    For local development, you can also create `config/config.dev.yaml` to override settings (gitignored). Environment variables will always take precedence.
-
-3.  **Install Python Dependencies using Poetry**:
-    ```bash
-    poetry install --with dev,test --sync
-    ```
-    *Note: This command also creates/updates `poetry.lock` if necessary.*
-
-4.  **Install Pre-commit Hooks**:
-    ```bash
-    poetry run pre-commit install
-    ```
-
-5.  **Start Base Infrastructure Services**:
-    This brings up PostgreSQL, MinIO, Vault (in dev mode), MLflow server, and Redis.
-    ```bash
-    docker-compose up --build -d postgres minio vault mlflow_server redis_app redis_feast
-    ```
-    Verify services are healthy: `docker-compose ps` and `docker-compose logs <service_name>`.
-
-6.  **Vault Dev Mode Initialization (One-time setup)**:
-    The `vault` service in `docker-compose.yml` starts Vault in dev mode with a root token `root`.
-    *   **Access Vault UI**: Open `http://localhost:8200` in your browser. Use `root` as the token.
-    *   **Enable AppRole Auth Method**:
-        ```bash
-        docker-compose exec vault vault auth enable approle
-        ```
-    *   **Create a Policy for the App** (e.g., `fx-trader-policy.hcl`):
-        ```hcl
-        # fx-trader-policy.hcl
-        path "secret/data/fx_trader/*" {
-          capabilities = ["read"]
-        }
-        path "secret/metadata/fx_trader/*" { # if using KV v2
-          capabilities = ["list"]
-        }
-        ```
-        Apply the policy:
-        ```bash
-        docker-compose exec vault vault policy write fx-trader - < ./path/to/your/fx-trader-policy.hcl
-        # (Adjust path to policy file if it's not in the root)
-        # Or, create it via UI: Policies -> Create ACL policy
-        ```
-    *   **Create an AppRole**:
-        ```bash
-        docker-compose exec vault vault write auth/approle/role/fx-trader-role token_policies="fx-trader" token_ttl=1h token_max_ttl=4h
-        ```
-    *   **Get RoleID and SecretID**:
-        ```bash
-        docker-compose exec vault vault read auth/approle/role/fx-trader-role/role-id
-        # Output: role_id     <YOUR_VAULT_ROLE_ID>
-
-        docker-compose exec vault vault write -f auth/approle/role/fx-trader-role/secret-id
-        # Output: secret_id          <YOUR_VAULT_SECRET_ID>
-        #         secret_id_accessor ...
-        ```
-    *   **Update `.env`**: Set `VAULT_ROLE_ID` and `VAULT_SECRET_ID` with the values obtained.
-    *   **Seed Initial Secrets**:
-        You can use the Vault UI (Secrets -> secret (kv) -> Create Secret) or CLI.
-        Example for KV v2 (default mount path `secret/`):
-        ```bash
-        docker-compose exec vault vault kv put secret/fx_trader/api_keys \
-            OANDA_ACCESS_TOKEN="your_oanda_token_from_env_or_real" \
-            FRED_API_KEY="your_fred_key_from_env_or_real" \
-            ALPHAVANTAGE_API_KEY="your_alphavantage_key_from_env_or_real"
-        ```
-        Ensure the path matches `VAULT_KV_MOUNT_POINT` and `VAULT_SECRET_PATH` in your `.env` and `config/settings.py`.
-
-7.  **MLflow Setup**:
-    *   The MLflow server should be running (from `docker-compose up`). Access UI at `http://localhost:5001`.
-    *   Create the `mlflow-artifacts` bucket in MinIO:
-        *   Access MinIO UI: `http://localhost:9000` (Credentials: `minio_access_key` / `minio_secret_key` from `.env`).
-        *   Click "Create Bucket" and name it `mlflow-artifacts` (or whatever you set in `MLFLOW_ARTIFACT_ROOT`).
-
-8.  **Feast Setup**:
-    Initialize the Feast feature repository if it doesn't exist (the `feature_store` directory is already structured, so this might be more about applying definitions).
-    Ensure your `feature_store/feature_repo_config.py` (or similar, depending on Feast version and template) points to the correct registry and online/offline stores as per `.env`.
-    ```bash
-    # cd feature_store # If your feast project is rooted here
-    # poetry run feast init my_feature_repo # Only if starting from scratch
-
-    # Apply feature definitions (assuming feature_store is the context)
-    poetry run feast -c feature_store apply
-
-    # Materialize some initial data (example for data up to now)
-    # You'll need to have some data in your offline store sources first.
-    # poetry run feast -c feature_store materialize-incremental $(date +%Y-%m-%dT%H:%M:%S)
-    ```
-    *Note: The exact Feast commands might vary slightly based on the Feast version and how you structure `feature_store/example_repo.py` or `feature_store/feature_store.yaml`.*
-    The provided structure assumes `feature_store/registry.db` (SQLite) and `feature_store/online_store.yaml` (for Redis).
-
-9.  **Start All Application Services**:
-    If you stopped them, or to bring up the `app` (FastAPI), `worker` (Celery), `dask-scheduler`, `dask-worker`, etc.
-    ```bash
-    docker-compose up --build -d
-    ```
-
-10. **Verify Services**:
-    Check logs for any errors:
-    ```bash
-    docker-compose logs -f app
-    docker-compose logs -f worker
-    # etc.
-    ```
-
-## Service URLs (Local Development)
-
-*   **FastAPI App (if running)**: `http://localhost:8000/docs`
-*   **Grafana**: `http://localhost:3000` (Default login: admin/admin, or as configured in `docker-compose.yml` environment variables for Grafana)
-*   **MLflow UI**: `http://localhost:5001`
-*   **MinIO Console**: `http://localhost:9000` (Credentials from `.env`)
-*   **Vault UI**: `http://localhost:8200` (Token: `root` for dev mode, or AppRole for app)
-*   **Prometheus**: `http://localhost:9090`
-*   **Alertmanager**: `http://localhost:9093`
-*   **Airflow UI (if configured & running)**: `http://localhost:8080` (or as per Airflow setup)
-*   **Prefect UI (if configured & running)**: `http://localhost:4200` (or as per Prefect setup)
-*   **Flower (Celery Monitor - if `worker` service includes it)**: `http://localhost:5555`
-
-## Running the System
-
-*   **Trigger Orchestrator Flows**:
-    *   Manually trigger DAGs/Flows via Airflow/Prefect UI.
-    *   Or run specific scripts: `poetry run python -m orchestrator.your_main_script`
-*   **Run Backtests Manually**:
-    ```bash
-    poetry run python -m backtest.runner --strategy EMACrossover --pair EUR_USD --start-date 2022-01-01 --end-date 2022-12-31
-    ```
-    Use `poetry run python -m backtest.runner --help` for all options.
-*   **Run Model Training Manually**:
-    ```bash
-    poetry run python -m mlops.train
-    ```
-*   **Run Data Ingestion Manually (Example)**:
-    ```bash
-    poetry run python -m data_ingest.main_ingest_script # (You'll need to create this script)
-    ```
-*   **Using Docker Compose Exec**:
-    For running commands within a running service container:
-    ```bash
-    docker-compose exec app poetry run python -m mlops.train
-    docker-compose exec app poetry run pytest
-    ```
-
-## Trading Strategies
-
-*   **EMA Crossover**: Buys when short-term EMA crosses above long-term EMA, sells on reverse.
-*   **RSI Oscillator**: Buys on oversold RSI (e.g., <30), sells on overbought RSI (e.g., >70).
-*   **Bollinger Band Breakout/Reversal**: Trades breakouts above/below bands or reversals from bands.
-
-Parameters for each strategy are configurable. See `models/signals.py` and `config/trading_params.py`.
-
-## Monitoring & Alerts
-
-*   **Grafana Dashboards**: Access Grafana at `http://localhost:3000`. A pre-configured dashboard JSON (`monitoring/grafana_dashboard.json`) can be imported.
-*   **Key Metrics**: PnL, drawdown, open trades, API latency, slippage, error counts.
-*   **Alert Types**: Configured in `monitoring/alertmanager/config.yml`. Critical alerts (drawdown breaches, ingestion failures, model drift, execution errors) are routed to Telegram.
-
-## Troubleshooting
-
-*   **`docker-compose logs <service_name>`**: Your first stop for debugging service issues.
-*   **Poetry issues**: Ensure `poetry shell` is active or prefix commands with `poetry run`.
-*   **TA-Lib installation**: If `poetry install` fails related to TA-Lib, ensure the C library is installed correctly on your system (see Prerequisites).
-*   **Port conflicts**: Ensure ports defined in `docker-compose.yml` and `.env` are free.
-
-## Contributing
-
-1.  Fork the repository.
-2.  Create a new feature branch (`git checkout -b feature/your-feature-name`).
-3.  Make your changes.
-4.  Ensure pre-commit hooks pass (`poetry run pre-commit run --all-files`).
-5.  Write tests for your changes. Ensure `poetry run pytest` passes and coverage is maintained.
-6.  Push your branch and create a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details (you'll need to create this file, e.g., with standard MIT license text).
-
----
-
-*Disclaimer: Trading foreign exchange on margin carries a high level of risk and may not be suitable for all investors. The high degree of leverage can work against you as well as for you. Before deciding to trade foreign exchange you should carefully consider your investment objectives, level of experience, and risk appetite. The possibility exists that you could sustain a loss of some or all of your initial investment and therefore you should not invest money that you cannot afford to lose. You should be aware of all the risks associated with foreign exchange trading and seek advice from an independent financial advisor if you have any doubts. This software is for educational and research purposes only and does not constitute financial advice.*
+このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](LICENSE)ファイルをご覧ください。

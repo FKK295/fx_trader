@@ -5,8 +5,8 @@ import talib
 from feast import FeatureView, Field
 from feast.types import Float32, Int64
 
-from fx_trader.feature_store.data_sources import price_data_source
-from fx_trader.feature_store.entities import currency_pair
+from data_sources import price_data_source
+from entities import currency_pair
 
 
 # Define a UDF for TA-Lib calculations if not using PandasTransformations directly

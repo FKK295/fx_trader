@@ -15,14 +15,25 @@ echo "Docker Entrypoint: Received command '$COMMAND'"
 # echo "Running database migrations..."
 # poetry run alembic upgrade head # If using Alembic for DB migrations
 
-echo "Configuring logging..."
-# This ensures logging is configured when any command is run
-python -c "from fx_trader.utils.logging import configure_logging; configure_logging()"
-
 if [ "$COMMAND" = "api" ]; then
   echo "Starting FastAPI application..."
   # Ensure FX_TRADER_APP_MODULE is set, e.g., fx_trader.app.main:app
-  exec uvicorn ${FX_TRADER_APP_MODULE:-fx_trader.app.main:app} --host 0.0.0.0 --port ${PORT:-8000} --reload ${UVICORN_RELOAD:---no-reload}
+  
+  # Default to no reload for production
+  RELOAD_OPTION=""
+  
+  # Enable reload only if UVICORN_RELOAD is explicitly set to "true"
+  if [ "${UVICORN_RELOAD:-false}" = "true" ]; then
+    echo "Hot reload enabled (development mode)"
+    RELOAD_OPTION="--reload"
+  fi
+  
+  # Execute uvicorn with the appropriate options
+  exec uvicorn \
+    ${FX_TRADER_APP_MODULE:-fx_trader.app.main:app} \
+    --host 0.0.0.0 \
+    --port ${PORT:-8000} \
+    $RELOAD_OPTION
 elif [ "$COMMAND" = "worker" ]; then
   echo "Starting Celery worker..."
   # Ensure FX_TRADER_CELERY_APP is set, e.g., fx_trader.app.celery_app:app

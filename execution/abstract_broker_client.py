@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
-from fx_trader.models.signals import Signal, SignalActionType
+from models.signals import Signal, SignalActionType
 
 
 class OrderType(str):

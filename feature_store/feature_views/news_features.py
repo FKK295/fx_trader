@@ -3,8 +3,8 @@ from datetime import timedelta
 from feast import FeatureView, Field
 from feast.types import Float32
 
-from fx_trader.feature_store.data_sources import news_sentiment_source
-from fx_trader.feature_store.entities import currency_pair
+from data_sources import news_sentiment_source
+from entities import currency_pair
 
 # Assuming news_sentiment_source has 'event_timestamp', 'currency_pair_id',
 # 'sentiment_score', 'relevance_score'.

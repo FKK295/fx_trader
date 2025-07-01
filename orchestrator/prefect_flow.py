@@ -5,12 +5,12 @@ from prefect.tasks import task_input_hash
 from prefect.artifacts import create_markdown_artifact
 
 # Import your project's modules
-# from fx_trader.data_ingest import oanda_client, fred_client, news_client
-# from fx_trader.quality_checks import validate
-# from fx_trader.feature_store import ... # e.g., script to run feast materialize
-# from fx_trader.mlops import train, retrain
-# from fx_trader.models import signals
-# from fx_trader.execution import risk_manager, oanda_broker_client
+# from data_ingest import oanda_client, fred_client, news_client
+# from quality_checks import validate
+# from feature_store import ... # e.g., script to run feast materialize
+# from mlops import train, retrain
+# from models import signals
+# from execution import risk_manager, oanda_broker_client
 
 # Placeholder tasks - replace with actual function calls from your modules
 

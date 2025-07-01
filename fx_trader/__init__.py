@@ -1,2 +1,2 @@
 # Main application package
-from . import config  # Example import
+# from . import config  # Example import

@@ -7,9 +7,9 @@ import pandas as pd
 from pydantic import BaseModel, Field, validator
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from fx_trader.config import settings
-from fx_trader.utils.http_client import get_async_http_client, make_request_with_retry
-from fx_trader.utils.logging import get_logger
+from config import settings
+from utils.http_client import get_async_http_client, make_request_with_retry
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -13,39 +13,21 @@ jobs:
     runs-on: ubuntu-latest
     # Add environment variables if your retraining script needs them (e.g., API keys for data fetching)
     # These should be GitHub secrets
-    # environment:
-    #   name: production # Or staging, if you have GitHub environments
-    # env:
-    #   OANDA_ACCESS_TOKEN: ${{ secrets.OANDA_ACCESS_TOKEN }}
-    #   FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-    #   MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }} # Or use the one from docker-compose for local testing
-    #   AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_ACCESS_KEY }} # For MLflow artifacts if MinIO is external
-    #   AWS_SECRET_ACCESS_KEY: ${{ secrets.MINIO_SECRET_KEY }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10" # Choose a specific version for retraining consistency
-
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
-      run: poetry install --no-dev --sync --no-interaction --no-ansi # No dev/test deps needed for retraining script usually
-
-    - name: Install TA-Lib (system dependency)
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libta-lib-dev
-        # poetry install --no-dev --sync --no-interaction --no-ansi # Re-install if TA-Lib python wrapper needs it
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install --with dev
 
-    - name: Run Retraining Script
-      # This assumes your mlops.retrain script can run and connect to necessary services (Feast, MLflow)
-      # You might need to set up service containers (like in docker-compose) if they are not externally accessible.
+    - name: Run drift detection
       # For a CI environment, MLflow/Feast might point to staging/prod instances.
       run: |
         poetry run python -m fx_trader.mlops.retrain \

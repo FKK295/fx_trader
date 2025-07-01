@@ -30,7 +30,7 @@ receivers:
   - name: 'telegram-notifications'
     telegram_configs:
       - bot_token: '${TELEGRAM_BOT_TOKEN}' # Use environment variable substitution
-        chat_id: ${TELEGRAM_CHAT_ID} # Use environment variable substitution
+        chat_id: 7241915697 # Use environment variable substitution
         api_url: 'https://api.telegram.org' # Default, can be omitted
         # parse_mode: 'HTML' # or 'MarkdownV2'
         send_resolved: true # Send notification when alert is resolved

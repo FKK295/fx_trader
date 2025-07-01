@@ -6,7 +6,7 @@ from prophet import Prophet
 from prophet.diagnostics import cross_validation, performance_metrics
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from fx_trader.utils.logging import get_logger
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 

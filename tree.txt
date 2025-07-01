@@ -1,0 +1,66 @@
+E:\USERS\KOTA\DESKTOP\FX_TRADER\FX_TRADER
+|   config.py
+|   __init__.py
+|   
++---app
+|   |   main.py
+|   |   __init__.py
+|   |   
+|   +---api
+|   |   |   __init__.py
+|   |   |   
+|   |   +---v1
+|   |   |   |   api.py
+|   |   |   |   __init__.py
+|   |   |   |   
+|   |   |   +---endpoints
+|   |   |   |   |   accounts.py
+|   |   |   |   |   backtesting.py
+|   |   |   |   |   health.py
+|   |   |   |   |   market_data.py
+|   |   |   |   |   orders.py
+|   |   |   |   |   positions.py
+|   |   |   |   |   trading.py
+|   |   |   |   |   __init__.py
+|   |   |   |   |   
+|   |   |   |   \---__pycache__
+|   |   |   |           accounts.cpython-310.pyc
+|   |   |   |           backtesting.cpython-310.pyc
+|   |   |   |           health.cpython-310.pyc
+|   |   |   |           market_data.cpython-310.pyc
+|   |   |   |           orders.cpython-310.pyc
+|   |   |   |           positions.cpython-310.pyc
+|   |   |   |           trading.cpython-310.pyc
+|   |   |   |           __init__.cpython-310.pyc
+|   |   |   |           
+|   |   |   \---__pycache__
+|   |   |           __init__.cpython-310.pyc
+|   |   |           
+|   |   \---__pycache__
+|   |           __init__.cpython-310.pyc
+|   |           
+|   \---__pycache__
+|           main.cpython-310.pyc
+|           __init__.cpython-310.pyc
+|           
++---db
+|   |   base.py
+|   |   __init__.py
+|   |   
+|   +---migrations
+|   |   |   env.py
+|   |   |   script.py.mako
+|   |   |   __init__.py
+|   |   |   
+|   |   +---versions
+|   |   \---__pycache__
+|   |           env.cpython-310.pyc
+|   |           
+|   \---__pycache__
+|           base.cpython-310.pyc
+|           __init__.cpython-310.pyc
+|           
+\---__pycache__
+        config.cpython-310.pyc
+        __init__.cpython-310.pyc
+        

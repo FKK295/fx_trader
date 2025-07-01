@@ -9,15 +9,15 @@ except ImportError:
     mt5 = None  # type: ignore
     print("MetaTrader5 library not found. MT5BrokerClient will not be functional.")
 
-from fx_trader.config import settings  # For potential MT5 login credentials
-from fx_trader.execution.abstract_broker_client import (
+from config import settings  # For potential MT5 login credentials
+from execution.abstract_broker_client import (
     AbstractBrokerClient,
     OrderType,
     Position,
     TradeOrder,
     OrderStatus
 )
-from fx_trader.utils.logging import get_logger
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -1,0 +1,119 @@
+groups:
+  - name: fx_trader_alerts
+    rules:
+      # High Position Exposure
+      - alert: HighPositionExposure
+        expr: fx_trader_position_exposure > 100000
+        for: 5m
+        labels:
+          severity: critical
+          service: fx_trader
+        annotations:
+          summary: "High position exposure detected"
+          description: "Position exposure exceeds threshold of 100000 units"
+          impact: "May indicate excessive risk exposure"
+          suggested_action: "Review position sizing parameters and consider reducing exposure"
+
+      # Negative PnL
+      - alert: NegativePnL
+        expr: fx_trader_pnl < -1000
+        for: 5m
+        labels:
+          severity: critical
+          service: fx_trader
+        annotations:
+          summary: "Negative PnL detected"
+          description: "PnL dropped below threshold of -1000 units"
+          impact: "Potential loss of capital"
+          suggested_action: "Review trading strategy and risk management parameters"
+
+      # High Trade Failure Rate
+      - alert: HighTradeFailureRate
+        expr: rate(fx_trader_trade_failures[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: fx_trader
+        annotations:
+          summary: "High trade failure rate"
+          description: "More than 10% of trades are failing"
+          impact: "Potential execution issues"
+          suggested_action: "Check broker connection and retry logic"
+
+      # Data Latency
+      - alert: DataLatency
+        expr: fx_trader_data_latency > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: fx_trader
+        annotations:
+          summary: "High data latency"
+          description: "Data feed latency exceeds 5 seconds"
+          impact: "Delayed trading decisions"
+          suggested_action: "Check data feed connection and network"
+
+      # Broker Connection Issues
+      - alert: BrokerConnectionError
+        expr: rate(fx_trader_broker_errors[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: fx_trader
+        annotations:
+          summary: "Broker connection errors detected"
+          description: "Broker API is returning errors"
+          impact: "Unable to execute trades"
+          suggested_action: "Check broker API status and network connection"
+
+      # Database Connection Issues
+      - alert: DatabaseConnectionError
+        expr: rate(fx_trader_db_errors[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: fx_trader
+        annotations:
+          summary: "Database connection errors detected"
+          description: "Database operations are failing"
+          impact: "Data persistence issues"
+          suggested_action: "Check database connection and logs"
+
+      # Redis Connection Issues
+      - alert: RedisConnectionError
+        expr: rate(fx_trader_redis_errors[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: fx_trader
+        annotations:
+          summary: "Redis connection errors detected"
+          description: "Redis operations are failing"
+          impact: "Cache and feature store issues"
+          suggested_action: "Check Redis connection and logs"
+
+      # ML Model Drift
+      - alert: ModelDriftDetected
+        expr: fx_trader_model_drift_score > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: fx_trader
+        annotations:
+          summary: "Model drift detected"
+          description: "Model performance has drifted beyond threshold"
+          impact: "Potential decrease in trading performance"
+          suggested_action: "Review model performance and consider retraining"
+
+      # Feature Store Latency
+      - alert: FeatureStoreLatency
+        expr: fx_trader_feature_store_latency > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: fx_trader
+        annotations:
+          summary: "Feature store latency high"
+          description: "Feature store operations taking longer than 2 seconds"
+          impact: "Delayed feature retrieval"
+          suggested_action: "Check feature store performance and optimize queries"

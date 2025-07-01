@@ -16,9 +16,9 @@ from evidently.metrics import (
 )
 from feast import FeatureStore
 
-from fx_trader.config import settings
-from fx_trader.mlops.train import run_training  # To trigger retraining
-from fx_trader.utils.logging import configure_logging, get_logger
+from config import settings
+from mlops.train import run_training  # To trigger retraining
+from utils.logging import configure_logging, get_logger
 
 configure_logging()
 logger = get_logger(__name__)

@@ -3,9 +3,9 @@ from datetime import timedelta
 from feast import FeatureView, Field
 from feast.types import Float32, String
 
-from fx_trader.feature_store.data_sources import macro_data_source
+from data_sources import macro_data_source
 # Or a new 'country' entity
-from fx_trader.feature_store.entities import currency_pair
+from entities import currency_pair
 
 # Assuming macro_data_source has 'event_timestamp', 'currency_pair_id' (mapped from country),
 # 'indicator_name', 'value'.

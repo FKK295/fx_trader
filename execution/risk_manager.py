@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 import talib
 
-from fx_trader.config import settings
-from fx_trader.config.trading_params import TradingParameters
-from fx_trader.models.signals import Signal, SignalActionType
-from fx_trader.utils.logging import get_logger
+from config import settings
+from config.trading_params import TradingParameters
+from models.signals import Signal, SignalActionType
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 

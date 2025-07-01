@@ -9,8 +9,8 @@ import great_expectations as gx
 import pandas as pd
 from great_expectations.checkpoint.types.checkpoint_result import CheckpointResult
 
-from fx_trader.config import settings
-from fx_trader.utils.logging import get_logger
+from config import settings
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 

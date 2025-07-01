@@ -3,30 +3,70 @@ FROM python:3.10-slim as builder
 
 WORKDIR /app
 
-# Install system dependencies required for Python packages
-# TA-Lib is a common one. Add others if your dependencies need them.
+# Install system dependencies required for Python packages and TA-Lib build
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libta-lib-dev \
-    # Add other system dependencies here if needed by your Python packages
-    # For example, for psycopg2 (if not using -binary) or other C extensions
-    # libpq-dev
+    wget \
+    unzip \
+    automake \
+    libtool \
+    libtool-bin \
+    pkg-config \
+    # For psycopg2-binary
+    libpq-dev \
  && rm -rf /var/lib/apt/lists/*
 
+# Build and install TA-Lib from source (v0.4.0)
+RUN wget https://github.com/TA-Lib/ta-lib/releases/download/v0.4.0/ta-lib-0.4.0-src.tar.gz \
+    && tar -xzf ta-lib-0.4.0-src.tar.gz \
+    && cd ta-lib/ \
+    # Configure with optimizations and disable unnecessary features
+    && ./configure --prefix=/usr \
+        --disable-dependency-tracking \
+        --enable-static=no \
+        --enable-shared=yes \
+    # Build with single thread to avoid race conditions
+    && make \
+    && make install \
+    && cd .. \
+    && rm -rf ta-lib ta-lib-0.4.0-src.tar.gz \
+    # Clear ldconfig cache and update library paths
+    && ldconfig
+
+# Set comprehensive environment variables for TA-Lib build/linking
+ENV CFLAGS="-I/usr/include/ta-lib -I/usr/include"
+ENV LDFLAGS="-L/usr/lib"
+ENV LD_LIBRARY_PATH="/usr/lib:${LD_LIBRARY_PATH}"
+ENV LIBRARY_PATH="/usr/lib"
+
+# Create symlinks for compatibility with different naming conventions
+RUN if [ ! -f /usr/lib/libta_lib.so ] && [ -f /usr/lib/libta-lib.so ]; then \
+        ln -s /usr/lib/libta-lib.so /usr/lib/libta_lib.so; \
+    fi && \
+    if [ ! -f /usr/lib/libta_lib.so.0 ] && [ -f /usr/lib/libta-lib.so.0 ]; then \
+        ln -s /usr/lib/libta-lib.so.0 /usr/lib/libta_lib.so.0; \
+    fi
+
 # Install Poetry
-ENV POETRY_VERSION=1.7.1 # Pin Poetry version for reproducibility
+ENV POETRY_VERSION=1.7.1
+ENV POETRY_HOME="/opt/poetry"
+ENV PATH="$POETRY_HOME/bin:$PATH"
+
+# Install Poetry
 RUN pip install "poetry==$POETRY_VERSION"
 
-# Configure Poetry to not create virtualenvs within the project directory
-RUN poetry config virtualenvs.create false
+# Configure Poetry
+RUN poetry config virtualenvs.create false \
+    && poetry config cache-dir /tmp/poetry-cache
 
-# Copy only files necessary for dependency installation
-COPY pyproject.toml poetry.lock ./
+# Copy only requirements files first to leverage Docker cache
+COPY pyproject.toml ./
 
-# Install dependencies (excluding dev dependencies)
-# --no-root: Do not install the project itself yet, only dependencies
-RUN poetry install --no-dev --no-interaction --no-ansi --no-root
+# Generate poetry.lock in the container's environment
+RUN poetry lock --no-update --no-interaction
 
+# Install production dependencies only
+RUN poetry install --only main --no-interaction --no-ansi --no-root
 
 # Stage 2: Runner
 FROM python:3.10-slim as runner
@@ -44,11 +84,18 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
-# Install system dependencies needed at runtime (e.g., TA-Lib runtime library)
+# Install runtime system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libta-lib0 \
-    # libpq5 # For psycopg2-binary runtime if needed, though binary usually includes it
- && rm -rf /var/lib/apt/lists/*
+    libgomp1 \
+    # For psycopg2-binary (if needed)
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Copy TA-Lib shared libraries
+COPY --from=builder /usr/lib/libta-lib.* /usr/lib/
+COPY --from=builder /usr/include/ta-lib /usr/include/ta-lib/
+RUN ldconfig
 
 # Copy installed dependencies from builder stage
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages

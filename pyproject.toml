@@ -9,57 +9,101 @@ packages = [{include = "fx_trader"}]
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
 
-# Core Libraries (Pinned)
-pandas = "^1.5.3"
-xgboost = "^1.7.5"
-prophet = "^1.1.5" # Consider checking for latest stable & its specific dependencies
+# Core Libraries
+# pandasは2.x系を維持。互換性を考慮してマイナーバージョンを制限
+pandas = ">=2.0.0,<2.2.0"
+# numpyはpandas 2.xの要件に合わせて更新
+numpy = ">=1.24.0,<2.0.0"
+# xgboostはpandas 2.0+と互換性のあるバージョンに
+xgboost = "^2.0.0"
+# prophet 1.1.5はpandas 2.0/2.1と互換性あり
+prophet = "^1.1.5"
+
+# ロギングとユーティリティ
 structlog = "^23.1.0"
 tenacity = "^8.2.3"
-pydantic = "^1.10.12" # Sticking to v1 for broader compatibility initially
-httpx = "^0.24.1" # Adjusted for feast compatibility; python-telegram-bot version also adjusted
+# pydantic v2にアップグレード
+pydantic = "^2.0.0"
+pydantic-settings = "^2.7.1"  # For BaseSettings in Pydantic v2
+# HTTPクライアント
+httpx = "^0.27.0"
+# キャッシュ
 diskcache = "^5.6.3"
-great-expectations = "^0.18.15"
-feast = "^0.35.0" # Compatible with Pydantic v1; ensure Python 3.9/3.10 compatibility
-mlflow-skinny = "^2.8.0"
-optuna = "^3.3.0"
-evidently = "^0.4.0" # Or newer
-backtrader = "^1.9.76.123"
-dask = {extras = ["distributed"], version = "^2024.3.0"}
-"TA-Lib" = {path = "whl/ta_lib-0.6.3-cp310-cp310-win_amd64.whl"} # Requires TA-Lib C library to be installed system-wide
-hvac = "^1.2.1"
-oandapyV20 = "^0.7.0" # OANDA v20 client
-MetaTrader5 = {version = "^5.0.45", platform = "win32"} # Windows specific, optional
-redis = "^5.0.1"
-psycopg2-binary = "^2.9.7" # For PostgreSQL_
-fastapi = "^0.99.1" # Adjusted for feast 0.35.0 compatibility (requires <0.100)
-uvicorn = {extras = ["standard"], version = "^0.27.0"}
-celery = {extras = ["redis"], version = "^5.3.6"}
-prometheus-client = "^0.19.0" # No change here, just for context
-python-telegram-bot = "^20.5" # Adjusted for httpx ^0.24.1 compatibility
 
-# Additional useful libraries
-PyYAML = "^6.0.1" # For loading config.dev.yaml
-cachetools = "^5.3.2" # For Vault client caching
-quantstats = "^0.0.61" # For backtesting reports
-websockets = "^12.0" # For OANDA streaming
-numpy = "^1.23.5" # Often a dependency, good to have explicit
-scipy = "^1.10.1"
-scikit-learn = "^1.2.2"
+# データ検証とテスト
+great-expectations = ">=0.18.15,<0.19.0"
+
+# 特徴量ストア (pandas 2.x対応バージョン)
+feast = "^0.40.0"
+
+# ML関連
+mlflow-skinny = ">=2.8.0,<3.0.0"
+optuna = "^3.6.0"
+evidently = "^0.4.0"
+
+# バックテスト
+backtrader = "^1.9.76.123"
+
+# 分散処理
+dask = {extras = ["distributed"], version = "^2024.5.0"}
+
+# テクニカル分析
+"TA-Lib" = "0.4.32"
+
+# シークレット管理
+hvac = "^1.2.1"
+
+# 取引所API
+oandapyV20 = "^0.7.0"
+MetaTrader5 = {version = "^5.0.45", platform = "win32"} # Windows specific, optional
+
+# データベースとキャッシュ
+redis = ">=5.0.1,<6.0.0"
+psycopg2-binary = ">=2.9.7,<3.0.0"
+
+# Web API
+fastapi = "^0.111.0"
+uvicorn = {extras = ["standard"], version = "^0.29.0"}
+
+# タスクキュー
+celery = {extras = ["redis"], version = ">=5.3.6,<6.0.0"}
+
+# モニタリング
+prometheus-client = ">=0.19.0,<1.0.0"
+
+# 通知
+python-telegram-bot = "^21.0"
+
+# その他のユーティリティ
+PyYAML = ">=6.0.1,<7.0.0"
+cachetools = ">=5.3.2,<6.0.0"
+quantstats = ">=0.0.61,<1.0.0"
+websockets = ">=12.0,<13.0"
+scipy = ">=1.10.1,<2.0.0"
+# pandas 2.0サポートが改善されたバージョン
+scikit-learn = ">=1.3.0,<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.3"
-pytest-cov = "^4.1.0"
-mypy = "^1.7.0"
-flake8 = "^6.1.0"
-black = "^23.11.0"
-isort = "^5.12.0"
-pre-commit = "^3.5.0"
+# テスト関連
+pytest = "^8.2.0"
+pytest-cov = "^5.0.0"
+pytest-asyncio = "^0.23.0"
+
+# 型チェック
+mypy = "^1.10.0"
+types-PyYAML = "^6.0.12.12"
+types-redis = "^4.6.0.20240417"
+types-cachetools = "^5.3.0.7"
+
+# コードフォーマット
+black = "^24.4.0"
+isort = "^5.13.0"
+flake8 = "^7.0.0"
+
+# その他の開発ツール
+pre-commit = "^3.7.0"
 mutmut = "^2.4.4"
-pytest-asyncio = "^0.21.1" # For testing async code
-safety = "^2.3.5" # For checking dependencies for vulnerabilities
-types-PyYAML = "^6.0.12.11"
-types-redis = "^4.6.0.7"
-types-cachetools = "^5.3.0.5"
+safety = "^3.0.0"
 
 [tool.black]
 line-length = 88
