@@ -14,17 +14,35 @@ jobs:
         python-version: ["3.9", "3.10"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-
-        path: .venv
-        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
-
+        cache: 'poetry'
+    
+    - name: Install Poetry
+      run: pipx install poetry==1.7.1
+      
+    - name: Configure Poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+        
+    - name: Set up cache
+      uses: actions/cache@v3
+      id: cache
+      with:
+        path: |
+          ~/.cache/pypoetry
+          .venv
+        key: ${{ runner.os }}-python-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-python-${{ matrix.python-version }}-
+          ${{ runner.os }}-
+    
     - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install --with dev,test --sync --no-interaction --no-ansi
 
     - name: Install TA-Lib (system dependency)
@@ -48,24 +66,28 @@ jobs:
     - name: Run Pytest with coverage
       run: |
         poetry run pytest -n auto --maxfail=1 --cov=fx_trader --cov-report=xml --cov-report=term-missing tests/
+      env:
+        PYTHONPATH: ${{ github.workspace }}
 
     - name: Run Mutation Testing (Mutmut)
       run: |
+        # Run mutation tests
         poetry run mutmut run
-        poetry run mutmut html # Generate HTML report
-        # Extract MSR and fail if below threshold
-        # The following line is a bit complex and might need adjustment based on mutmut's output format
-        # MSR=$(poetry run mutmut results | grep "Survived" | awk '{print $1}' | sed 's/%//')
-        # For a simpler approach, check the junit.xml or a summary file if mutmut creates one.
-        # This example uses a placeholder for MSR extraction and check.
-        # A more robust way is to parse the XML output if `mutmut junitxml` is used.
-        # For now, let's assume a manual check or a more sophisticated script would handle MSR.
+        # Generate HTML report
+        poetry run mutmut html
+        
+        # Extract mutation score and check against threshold
+        # Note: This is a basic implementation and might need adjustment
+        MSR=$(poetry run mutmut results | grep -oP '\d+%' | head -1 | tr -d '%')
+        echo "Mutation Score: ${MSR}%"
+        
+        # Fail if mutation score is below threshold (e.g., 80%)
+        if [ "$MSR" -lt 80 ]; then
+          echo "Mutation Score (${MSR}%) is below 80%. Failing build."
+          exit 1
+        fi
+        
         echo "Mutation testing complete. Check HTML report in artifacts."
-        # Example to fail build if MSR is low (requires reliable MSR extraction):
-        # if [ $(echo "$MSR < 80" | bc -l) -ne 0 ]; then
-        #   echo "Mutation Score ($MSR%) is below 80%. Failing build."
-        #   exit 1
-        # fi
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -74,10 +96,21 @@ jobs:
         files: ./coverage.xml
         fail_ci_if_error: true
 
-    - name: Build Docker image
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main' # Only build on push to main
-      run: |
-        docker build -t ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }} .
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      with:
+        context: .
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Log in to GitHub Container Registry
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
