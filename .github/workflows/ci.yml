@@ -21,12 +21,14 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'poetry'  # Poetryの依存関係をキャッシュ
     
     - name: Install Poetry
       run: |
         python -m pip install --upgrade pip
+        # pipで直接インストールし、python -m poetry で実行する
         pip install poetry==1.7.1
+        # Poetryのバージョンを確認
+        python -m poetry --version
 
     - name: Install TA-Lib (system dependency)
       run: |
@@ -52,30 +54,30 @@ jobs:
     
     - name: Install dependencies
       run: |
-        poetry install --with dev,test --sync --no-interaction --no-ansi
+        python -m poetry install --with dev,test --sync --no-interaction --no-ansi
 
     - name: Run linters and formatters (pre-commit)
       run: |
-        # poetry run を使用して、仮想環境内のツールを実行します。
-        poetry run pre-commit run --all-files
+        # python -m poetry run を使用して、仮想環境内のツールを実行します。
+        python -m poetry run pre-commit run --all-files
 
     - name: Run Pytest with coverage
       run: |
-        # poetry run を使用して、仮想環境内のpytestを実行します。
-        poetry run pytest -n auto --maxfail=1 --cov=fx_trader --cov-report=xml --cov-report=term-missing tests/
+        # python -m poetry run を使用して、仮想環境内のpytestを実行します。
+        python -m poetry run pytest -n auto --maxfail=1 --cov=fx_trader --cov-report=xml --cov-report=term-missing tests/
       env:
         PYTHONPATH: ${{ github.workspace }}
 
     - name: Run Mutation Testing (Mutmut)
       # Mutmut HTMLレポートが生成されることを確認し、そのパスをartifactsにアップロードします。
       run: |
-        poetry run mutmut run
-        poetry run mutmut html
+        python -m poetry run mutmut run
+        python -m poetry run mutmut html
         
         # mutmut html のデフォルト出力パスはカレントディレクトリの html/mutmut/ ですが、
         # 確実を期すため、生成されたディレクトリが存在するか確認します。
         if [ -d "html/mutmut" ]; then
-          MSR=$(poetry run mutmut results | grep -oP '\d+%' | head -1 | tr -d '%')
+          MSR=$(python -m poetry run mutmut results | grep -oP '\d+%' | head -1 | tr -d '%')
           echo "Mutation Score: ${MSR}%"
           
           if [ "$MSR" -lt 80 ]; then
