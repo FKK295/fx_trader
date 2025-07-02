@@ -49,10 +49,18 @@ repos:
         exclude: ^(docs/|notebooks/|tests/fixtures/)
         args: [--strict, --ignore-missing-imports] # 型チェックの厳格化
 
-  # safety のリポジトリURLとrevを修正
-  - repo: https://github.com/pyupio/safety/ # PyCQA から pyupio に変更
-    # pyproject.toml の safety バージョン "^3.0.0" に合わせる
-    rev: 3.0.0
+  # safety は公式の pre-commit ミラーが存在しないため、local フックとして設定する
+  - repo: local
     hooks:
       - id: safety
-        args: ["--ignore=51457"] # Example: Ignore specific vulnerability if vetted
+        name: Run Safety Security Check
+        # Poetry 環境で safety check コマンドを実行
+        entry: poetry run safety check
+        # 環境の Python を使用
+        language: system
+        # safety はファイル名を引数として受け取らないため、false に設定
+        pass_filenames: false
+        # pyproject.toml または poetry.lock が変更された場合にのみフックを実行
+        files: '^(pyproject\.toml|poetry\.lock)$'
+        # 前回の設定を維持: 特定の脆弱性を無視する場合
+        args: ["--ignore=51457"]
