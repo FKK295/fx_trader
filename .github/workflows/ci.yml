@@ -93,7 +93,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        python -m poetry install --with dev,test --sync --no-interaction --no-ansi
+        python -m poetry install --with dev --sync --no-interaction --no-ansi
 
     - name: Run linters and formatters (pre-commit)
       run: |
