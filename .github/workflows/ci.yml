@@ -37,36 +37,36 @@ jobs:
         sudo apt-get install -y --no-install-recommends \
             software-properties-common \
             build-essential \
-            wget
+            wget \
+            unzip \
+            automake \
+            libtool \
+            libtool-bin \
+            pkg-config
 
-        # リポジトリを追加
-        sudo add-apt-repository -y universe
-        sudo add-apt-repository -y ppa:deadsnakes/ppa
-        sudo apt-get update -y
+        # deadsnakes PPAはPythonバージョン用なので、TA-Libのインストールには不要です
+        # sudo add-apt-repository -y ppa:deadsnakes/ppa
+        # sudo apt-get update -y
 
-        # TA-Libの依存関係をインストール
-        sudo apt-get install -y \
-            libta-lib0 \
-            libta-lib-dev \
-            ta-lib1 \
-            ta-lib1-dev
-
-        # ソースからビルドする場合のフォールバック
-        if ! command -v ta-lib-config &> /dev/null; then
-            echo "TA-Lib not found in repositories, building from source..."
-            wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
-            tar -xzf ta-lib-0.4.0-src.tar.gz
-            cd ta-lib/
-            ./configure --prefix=/usr
-            make
-            sudo make install
-            cd ..
-            rm -rf ta-lib/ ta-lib-0.4.0-src.tar.gz
-        fi
+        # TA-LibのCライブラリをソースからビルドしてインストールします
+        # Dockerfileと同じ手順をCIでも実行します
+        echo "Building TA-Lib from source..."
+        wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+        tar -xzf ta-lib-0.4.0-src.tar.gz
+        cd ta-lib/
+        ./configure --prefix=/usr \
+            --disable-dependency-tracking \
+            --enable-static=no \
+            --enable-shared=yes
+        make
+        sudo make install
+        cd ..
+        rm -rf ta-lib/ ta-lib-0.4.0-src.tar.gz
 
         # インストールの確認
+        # ta-lib-config コマンドが利用可能か確認します
         if ! command -v ta-lib-config &> /dev/null; then
-            echo "Error: Failed to install TA-Lib"
+            echo "Error: Failed to install TA-Lib C library from source."
             exit 1
         fi
         
