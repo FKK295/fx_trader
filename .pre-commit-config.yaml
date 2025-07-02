@@ -52,7 +52,7 @@ repos:
   # safety のリポジトリURLとrevを修正
   - repo: https://github.com/pyupio/safety/ # PyCQA から pyupio に変更
     # pyproject.toml の safety バージョン "^3.0.0" に合わせる
-    rev: v3.0.0
+    rev: 3.0.0
     hooks:
       - id: safety
         args: ["--ignore=51457"] # Example: Ignore specific vulnerability if vetted
